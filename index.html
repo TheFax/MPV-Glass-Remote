@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPV Remote UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="p-4 flex flex-col items-center min-h-screen">
+
+    <div class="max-w-xl w-full space-y-6 mt-10">
+        <div class="vol_card p-4 text-center">
+            <img id="preview" src="" alt="Preview" class="preview-box mb-6">
+            <h2 id="file-title" class="text-xl font-semibold truncate px-4 text-emerald-400">Waiting server...</h2>
+        </div>
+
+        <div class="volumio-card p-8 space-y-6">
+            <!-- Progress bar 'media position' -->
+            <div class="w-full flex items-center space-x-3">
+                <span id="curTime" class="text-s text-gray-400 w-10">0:00</span>
+                <input type="range" id="progress" class="flex-grow h-1" value="0" step="1" onchange="seek(this.value)">
+                <span id="durTime" class="text-s text-gray-400 w-10">0:00</span>
+            </div>
+
+            <div class="flex justify-center items-center space-x-8">
+                <!-- Rewind -->
+                <button onclick="sendCommand('seek', [-10])" class="btn-ctrl text-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor"
+                        class="bi bi-rewind" viewBox="0 0 16 16">
+                        <path
+                            d="M9.196 8 15 4.633v6.734zm-.792-.696a.802.802 0 0 0 0 1.392l6.363 3.692c.52.302 1.233-.043 1.233-.696V4.308c0-.653-.713-.998-1.233-.696z" />
+                        <path
+                            d="M1.196 8 7 4.633v6.734zm-.792-.696a.802.802 0 0 0 0 1.392l6.363 3.692c.52.302 1.233-.043 1.233-.696V4.308c0-.653-.713-.998-1.233-.696z" />
+                    </svg>
+                </button>
+                <!-- Play/pause -->
+                <button id="playBtn" onclick="sendCommand('cycle', ['pause'])" class="btn-ctrl text-3xl">
+                    <!-- SVG PLAY -->
+                    <svg id="svg-play" class="w-[48px] h-[48px]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                        width="24" height="24" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 18V6l8 6-8 6Z" />
+                    </svg>
+                    <!-- SVG PAUSE -->
+                    <svg id="svg-pause" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                        class="hidden bi bi-pause w-[48px] h-[48px]" viewBox="0 0 16 16">
+                        <path
+                            d="M6 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5" />
+                    </svg>
+
+                </button>
+
+                <!-- Fast forward -->
+                <button onclick="sendCommand('seek', [10])" class="btn-ctrl text-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor"
+                        class="bi bi-fast-forward" viewBox="0 0 16 16">
+                        <path
+                            d="M6.804 8 1 4.633v6.734zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C.713 12.69 0 12.345 0 11.692V4.308c0-.653.713-.998 1.233-.696z" />
+                        <path
+                            d="M14.804 8 9 4.633v6.734zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C8.713 12.69 8 12.345 8 11.692V4.308c0-.653.713-.998 1.233-.696z" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="flex justify-between items-center pt-4 border-t border-gray-800">
+                <div class="flex items-center space-x-3 w-1/2">
+                    <!-- Volume icon -->
+                    <span class="text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                            fill="currentColor" class="bi bi-volume-up" viewBox="0 0 16 16">
+                            <path
+                                d="M11.536 14.01A8.47 8.47 0 0 0 14.026 8a8.47 8.47 0 0 0-2.49-6.01l-.708.707A7.48 7.48 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303z" />
+                            <path
+                                d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.48 5.48 0 0 1 11.025 8a5.48 5.48 0 0 1-1.61 3.89z" />
+                            <path
+                                d="M10.025 8a4.5 4.5 0 0 1-1.318 3.182L8 10.475A3.5 3.5 0 0 0 9.025 8c0-.966-.392-1.841-1.025-2.475l.707-.707A4.5 4.5 0 0 1 10.025 8M7 4a.5.5 0 0 0-.812-.39L3.825 5.5H1.5A.5.5 0 0 0 1 6v4a.5.5 0 0 0 .5.5h2.325l2.363 1.89A.5.5 0 0 0 7 12zM4.312 6.39 6 5.04v5.92L4.312 9.61A.5.5 0 0 0 4 9.5H2v-3h2a.5.5 0 0 0 .312-.11" />
+                        </svg>
+                    </span>
+                    <!-- Volume slider -->
+                    <input type="range" id="volume" class="w-full" oninput="setVolume(this.value)">
+                </div>
+                <div class="flex space-x-3">
+                    <!-- Media browser (modal) -->
+                    <button onclick="toggleModal()" class="px-4 py-2 bg-emerald-600 rounded-full text-sm font-bold"><svg
+                            xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor"
+                            class="bi bi-collection-play" viewBox="0 0 16 16">
+                            <path
+                                d="M2 3a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11A.5.5 0 0 0 2 3m2-2a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7A.5.5 0 0 0 4 1m2.765 5.576A.5.5 0 0 0 6 7v5a.5.5 0 0 0 .765.424l4-2.5a.5.5 0 0 0 0-.848z" />
+                            <path
+                                d="M1.5 14.5A1.5 1.5 0 0 1 0 13V6a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 16 6v7a1.5 1.5 0 0 1-1.5 1.5zm13-1a.5.5 0 0 0 .5-.5V6a.5.5 0 0 0-.5-.5h-13A.5.5 0 0 0 1 6v7a.5.5 0 0 0 .5.5z" />
+                        </svg>
+                    </button>
+                    <!-- Fullscreen button -->
+                    <button onclick="sendCommand('cycle', ['fullscreen'])"
+                        class="p-2 bg-gray-800 rounded-lg text-xs"><svg xmlns="http://www.w3.org/2000/svg" width="24"
+                            height="24" fill="currentColor" class="bi bi-arrows-fullscreen" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd"
+                                d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707m4.344 0a.5.5 0 0 1 .707 0l4.096 4.096V11.5a.5.5 0 1 1 1 0v3.975a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h2.768l-4.096-4.096a.5.5 0 0 1 0-.707m0-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707m-4.344 0a.5.5 0 0 1-.707 0L1.025 1.732V4.5a.5.5 0 0 1-1 0V.525a.5.5 0 0 1 .5-.5H4.5a.5.5 0 0 1 0 1H1.732l4.096 4.096a.5.5 0 0 1 0 .707" />
+                        </svg>
+                    </button>
+                    <!-- Quit button -->
+                    <button onclick="sendCommand('quit')" class="p-2 bg-red-900 rounded-lg text-xs">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                            class="bi bi-power" viewBox="0 0 16 16">
+                            <path d="M7.5 1v7h1V1z" />
+                            <path
+                                d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="vol_card p-4 text-center">
+            <div class="mt-2 space-y-1 text-xs text-gray-500 font-mono">
+                <p id="detail-folder" class="truncate px-4"></p>
+                <p class="truncate px-4">
+                    <span id="detail-filename" class="text-gray-400"></span><br>
+                    <span id="detail-extension" class="text-emerald-600 font-bold"></span>
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="file-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center invisible opacity-0 z-50">
+        <div class="modal-content p-6 border border-gray-700 w-[95vw] max-w-6xl h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h3 class="text-xl font-bold text-emerald-400">Media Library</h3>
+                <button onclick="toggleModal()" class="text-gray-400 text-3xl">&times;</button>
+            </div>
+
+            <div class="overflow-y-auto flex-grow pr-2">
+                <img id="current-folder-banner" src="" alt="Folder Poster" class="w-full mb-6">
+
+                <div id="file-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const audioLowRes = ['.mp3', '.ogg', '.m4a', 'opus'];
+        const audioHighRes = ['.flac', '.wav'];
+        const video = ['.mp4', '.mkv', '.avi', '.mov', '.m4v'];
+
+        async function sendCommand(cmd, params = []) {
+            await fetch('/api/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cmd, params })
+            });
+            if (cmd === 'play_file') toggleModal(); // Close modal on file play
+        }
+
+        function toggleModal() {
+            const m = document.getElementById('file-modal');
+            const isVisible = m.classList.contains('invisible');
+            if (isVisible) {
+                m.classList.remove('invisible', 'opacity-0');
+                loadFiles();
+            } else {
+                m.classList.add('invisible', 'opacity-0');
+            }
+        }
+
+        async function loadFiles(path = "") {
+            const res = await fetch(`/api/files?path=${encodeURIComponent(path)}`);
+            const data = await res.json();
+            const list = document.getElementById('file-list');
+            const banner = document.getElementById('current-folder-banner');
+
+            list.innerHTML = "";
+
+            // Set the current folder banner if available
+            if (data.current_thumb) {
+                banner.src = data.current_thumb;
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+
+            // Add the "Back" button if we are not in the root
+            if (path !== "" && path !== ".") {
+                const backDiv = document.createElement('div');
+                backDiv.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center mb-4";
+
+                // Set here the path to your "Back" icon
+                const backThumbPath = "/back.png";
+
+                backDiv.innerHTML = `
+                    <img src="${backThumbPath}" class="folder-thumb">
+                    <div class="flex-grow min-w-0">
+                        <div class="truncate font-bold text-lg text-white">BACK</div>
+                        <div class="text-xs text-gray-400 font-semibold tracking-wide uppercase">Previous Directory</div>
+                    </div>
+                    `;
+
+                backDiv.onclick = () => {
+                    const parent = path.split('/').slice(0, -1).join('/');
+                    loadFiles(parent);
+                };
+                list.prepend(backDiv); // We use 'prepend' to ensure it is always the first item in the list
+            }
+
+            data.items.forEach(f => {
+                const div = document.createElement('div');
+
+                div.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center";
+
+                let iconHtml;
+                if (f.thumb) {
+                    // If there is a thumb...
+                    iconHtml = `<img src="${f.thumb}" class="folder-thumb">`;
+                } else {
+                    // If there is not a thumb...
+                    iconHtml = '';
+                }
+
+                // Determine file type and its description
+                let typeText;
+
+
+                if (f.is_dir) {
+                    typeText = "Folder";
+                } else if (audioHighRes.includes(f.ext)) {
+                    typeText = "Lossless Audio";
+                } else if (audioLowRes.includes(f.ext)) {
+                    typeText = "Audio";
+                } else if (video.includes(f.ext)) {
+                    typeText = "Video";
+                } else {
+                    typeText = "Unknown";
+                }
+
+                div.innerHTML = `
+                    ${iconHtml}
+                        <div class="flex-grow min-w-0">
+                            <div class="truncate font-bold text-lg">${f.name}</div>
+                            <div class="text-xs text-emerald-400/80 uppercase tracking-wider">${typeText}</div>
+                        </div>
+                    `;
+
+                div.onclick = () => f.is_dir ? loadFiles(f.rel_path) : sendCommand('play_file', [f.rel_path]);
+                list.appendChild(div);
+            });
+        }
+
+        function setVolume(val) { sendCommand('set_property', ['volume', parseInt(val)]); }
+
+        function seek(val) { sendCommand('set_property', ['time-pos', parseInt(val)]); }
+
+        // Update UI every 1 second
+        setInterval(async () => {
+            try {
+                const res = await fetch('/api/status');
+                const s = await res.json();
+
+                document.getElementById('file-title').innerText = s.title;
+
+                // --- NUOVE RIGHE DA AGGIUNGERE ---
+                document.getElementById('detail-folder').innerText = s.folder ? `${s.folder}` : "";
+                document.getElementById('detail-filename').innerText = s.filename || "";
+
+                let typeText;
+                if (audioHighRes.includes(s.extension)) {
+                    typeText = "Lossless Audio";
+                } else if (audioLowRes.includes(s.extension)) {
+                    typeText = "Compressed Audio";
+                } else if (video.includes(s.extension)) {
+                    typeText = "Video";
+                } else {
+                    typeText = "";
+                }
+
+                document.getElementById('detail-extension').innerText = typeText;
+                // --------------------------------
+
+                document.getElementById('progress').max = s.duration || 0;
+                document.getElementById('progress').value = s.pos || 0;
+                document.getElementById('volume').value = s.volume || 0;
+
+                const playSvg = document.getElementById('svg-play');
+                const pauseSvg = document.getElementById('svg-pause');
+
+                if (s.paused) {
+                    // Se è in pausa, mostra il triangolo (Play)
+                    playSvg.classList.remove('hidden');
+                    pauseSvg.classList.add('hidden');
+                } else {
+                    // Se è in play, mostra le due barre (Pause)
+                    playSvg.classList.add('hidden');
+                    pauseSvg.classList.remove('hidden');
+                }
+
+                const fmt = (sec) => Math.floor(sec / 60) + ":" + ("0" + Math.floor(sec % 60)).slice(-2);
+                document.getElementById('curTime').innerText = fmt(s.pos || 0);
+                document.getElementById('durTime').innerText = fmt(s.duration || 0);
+            } catch (e) { }
+        }, 1000);
+
+        // Update Screenshot every 5 seconds
+        setInterval(() => {
+            document.getElementById('preview').src = `/api/screenshot?t=${new Date().getTime()}`;
+        }, 5000);
+
+    </script>
+</body>
+
+</html>

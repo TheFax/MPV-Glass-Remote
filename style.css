@@ -1,0 +1,125 @@
+body {
+    background: #0f0f0f;
+    color: #fff;
+    font-family: sans-serif;
+}
+
+.volumio-card {
+    background: #181818;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.preview-box {
+    width: 100%;
+    height: 280px;
+    object-fit: contain;
+    border-radius: 15px;
+    background: #000;
+    border: 1px solid #222;
+}
+
+.btn-ctrl {
+    transition: 0.2s;
+    padding: 18px;
+    border-radius: 50%;
+    background: #222;
+}
+
+.btn-ctrl:hover {
+    background: #333;
+    color: #00d1b2;
+    transform: scale(1.1);
+}
+
+#file-modal {
+    transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+.modal-content {
+    background: #181818;
+    border-radius: 20px;
+    /* Rimosso max-width: 500px per permettere l'espansione */
+}
+
+/* Modifica la card per gestire il posizionamento assoluto della thumb */
+.folder-card {
+    background: rgba(255, 255, 255, 0.05);
+    transition: 0.3s;
+    border: 1px solid transparent;
+    position: relative; /* Necessario per il posizionamento della thumb */
+    overflow: hidden;   /* Taglia la thumb se esce dai bordi */
+    min-height: 80px;   /* Assicura un'altezza minima per le thumb grandi */
+
+
+    /* MODIFICA QUI: Forza l'altezza a un valore fisso */
+    height: 90px; 
+    display: flex;
+    align-items: center;
+}
+
+/* Modifica della miniatura: ancorata a destra con sfumatura verso sinistra */
+.folder-thumb {
+    position: absolute;
+    right: -10px; /* Incollata a destra = 0    con -10 ne nascondo un po.*/
+    top: 0;
+    height: 100%;
+    width: 180px; /* Leggermente più larga per una sfumatura più dolce */
+    object-fit: cover;
+    z-index: 0;
+    /* Maschera di sfumatura: trasparente a sinistra, visibile a destra */
+    mask-image: linear-gradient(to left, black 30%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to left, black 30%, transparent 100%);
+    opacity: 0.9;
+}
+
+/* Regoliamo il contenitore del testo */
+.folder-card div.flex-grow {
+    position: relative;
+    z-index: 1;
+    margin-left: 15px;
+    /*margin-right: 60px; */ /* Spazio di sicurezza per non finire sotto la parte più scura della thumb */
+}
+
+.folder-card:hover {
+    background: rgba(0, 209, 178, 0.1);
+    /*border-color: #00d1b2;*/
+    
+    transform: translateY(-2px);
+}
+
+
+/* Banner superiore nel modal */
+#current-folder-banner {
+    width: 100%;
+    height: auto;
+    /* Altezza automatica basata sull'immagine */
+    max-height: 400px;
+    /* Limite massimo per non occupare tutto lo schermo */
+    object-fit: contain;
+    /* Mantiene le proporzioni senza tagliare */
+    border-radius: 12px;
+    margin-bottom: 20px;
+    display: none;
+    
+}
+
+
+input[type=range] {
+    accent-color: #00d1b2;
+}
+/* Applichiamo l'ombra al titolo per massimizzare il contrasto */
+.folder-card div.flex-grow .truncate {
+    position: relative;
+    z-index: 1;
+    /* Ombra netta e soffusa per distaccare il testo dal fondo */
+    text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.9);
+                 
+    color: #ffffff;
+    letter-spacing: 0.5px;
+}
+
+/* Opzionale: aggiungi un'ombra più leggera anche al sottotitolo */
+.folder-card div.flex-grow .text-xs {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
