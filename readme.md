@@ -11,9 +11,9 @@ Built with **Python** and **Tailwind CSS**, it bridges the gap between the raw p
 ---
 ## Screenshots
 
-![Main screen from smartphone](screenshot/main-screen.png)
-![Media browser from smartphone](screenshot/media-library.jpg)
-![Media browser with thumb](screenshot/media-library-with-thumb.jpg)
+<p align="center">  <img src="screenshot/main-screen.png" width="300" alt="Main Screen, from smartphone"> </p>
+<p align="center"> <img src="screenshot/media-library.jpg" width="300" alt="Media browser from smartphone"> <img src="screenshot/media-library-with-thumb.jpg" width="300" alt="Media browser with thumb"> </p>
+
 
 ## Key Features
 
