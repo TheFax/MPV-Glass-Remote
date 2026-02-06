@@ -1,6 +1,6 @@
 # MPV Remote
 
-**Easy**, **Elegant** and **Minimalist**. MPV meets power.
+**Easy**, **Elegant** and **Minimalist**: MPV meets power.
 
 ---
 
@@ -27,30 +27,17 @@ Built with **Python** and **Tailwind CSS**, it bridges the gap between the raw p
 
 ## Quick Start
 
-### 1. Prerequisites
-
-Make sure you have `mpv`, `python` installed on your system.
-
-```bash
-# On Ubuntu/Debian
-sudo apt install mpv python3
-
-```
-
-### 2. Run the Server
-
-1. Clone this repository.
-2. Place your media (or link your media folder) to the path defined in `mpv_remote.py` (default: `./media`), or edit `mpv_remote.py` (line 10) in order to search media files in your favourite folder.
-3. Launch the application:
+1. Make sure you have `mpv`, `python` installed on your system.
+2. Clone this repository.
+3. Place your media (or link your media folder) to the path defined in `mpv_remote.py` (default: `./media`), or edit `mpv_remote.py` in order to search media files in your favourite folder.
+4. Launch the application
+5. Open your browser and navigate to `http://<your-ip>:5000`, and enjoy!
 
 ```bash
-python3 mpv_remote.py
-
+git clone https://github.com/TheFax/MPV-Glass-Remote.git
+cd MPV-Glass-Remote
+python src/mpv_remote.py
 ```
-
-### 3. Enjoy
-
-Open your browser and navigate to `http://<your-ip>:5000`. You are ready to go!
 
 ---
 
