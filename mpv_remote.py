@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import socket
 import subprocess
@@ -6,36 +7,130 @@ import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
-MEDIA_DIR = "./media"
+# Configuration file
+CONFIG_FILE = 'config.json'
 
 
-ALLOWED_EXTENSIONS = {'.mp4', '.mkv', '.avi', '.mov', '.m4v', '.mp3', '.flac'}
-IPC_SOCKET = "/tmp/mpv-socket"
-PORT = 5000
+def load_config():
+    # Check if config file exists
+    if not os.path.exists(CONFIG_FILE):
+        print(f"ERROR: Configuration file '{CONFIG_FILE}' not found.")
+        sys.exit(1)
+
+    try:
+        with open(CONFIG_FILE, 'r') as f:
+            config = json.load(f)
+
+        if os.name == 'nt':
+            required_keys = ["WINDOWS_media_dir", "allowed_extensions", "port", "WINDOWS_mpv_executable"]
+        else:
+            required_keys = ["LINUX_media_dir", "allowed_extensions", "port", "LINUX_mpv_executable"]
+
+        missing = [key for key in required_keys if key not in config]
+
+        if missing:
+            print(f"ERROR: Missing keys in JSON: {', '.join(missing)}")
+            sys.exit(1)
+
+        if os.name == 'nt':
+            config["media_dir"] = config["WINDOWS_media_dir"]
+            config["mpv_executable"] = config["WINDOWS_mpv_executable"]
+            config["ipc_socket"] = "\\\\.\\pipe\\mpvpipe"
+            config["screenshot_file"] = ".\\mpv_screenshot.jpg"
+        else:
+            config["media_dir"] = config["LINUX_media_dir"]
+            config["mpv_executable"] = config["LINUX_mpv_executable"]
+            config["ipc_socket"] = "/tmp/mpv-socket"
+            config["screenshot_file"] = "/tmp/mpv_screenshot.jpg"
+
+        return config
+
+    except json.JSONDecodeError as e:
+        print(f"ERROR: '{CONFIG_FILE}' is not a valid JSON file.")
+        print(f"Details: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"ERROR: Unexpected error while loading configuration: {e}")
+        sys.exit(1)
+
+
+# Initialize configuration
+CONF = load_config()
+
+# Configuration Shortcuts
+MEDIA_DIR = CONF['media_dir']
+ALLOWED_EXTENSIONS = set(CONF['allowed_extensions'])
+PORT = CONF['port']
+MPV_EXE = CONF['mpv_executable']
+IPC_SOCKET = CONF['ipc_socket']
+SCREENSHOT_TEMP = CONF['screenshot_file']
 
 
 def send_mpv_command(command):
+    msg = json.dumps({"command": command}) + "\n"
+    # print(f"MPV command: {command}")
     try:
-        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        client.settimeout(0.2)
-        client.connect(IPC_SOCKET)
+        if os.name == 'nt':
+            # Implementazione specifica per Windows Named Pipes
+            with open(IPC_SOCKET, 'r+b', buffering=0) as pipe:
+                pipe.write(msg.encode())
+                res = pipe.readline()
+                # print(f"MPV res: {res}")
+                return json.loads(res.decode())
+        else:
+            client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            client.settimeout(0.2)
+            client.connect(IPC_SOCKET)
+            client.send(msg.encode())
+            res = client.recv(4096)
+            client.close()
+            # print(f"MPV res: {res}")
+            return json.loads(res.decode())
+    except Exception as e:
+        # print(f"\n[Socket Error] {e}")
+        return {"offline": "offline"}
+
+
+def old_send_mpv_command(command):
+    client = None
+    try:
+        print(f"sendmpv: {command}")
+
+        # Estrazione IP e porta dal config
+        ip, port = IPC_SOCKET.split(':')
+
+        # Creazione socket TCP
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.settimeout(2)  # Timeout rapido: se non risponde subito, mpv è spento
+
+        client.connect((ip, int(port)))
+
         msg = json.dumps({"command": command}) + "\n"
         client.send(msg.encode())
+
         res = client.recv(4096)
-        client.close()
+        print(res)
         return json.loads(res.decode())
-    except:
-        return {"error": "offline"}
+    # except (ConnectionRefusedError, ConnectionAbortedError, socket.timeout, OSError):
+    except Exception as e:
+        # MPV non sta girando o la connessione è stata rifiutata
+        print(f"\n[Socket Error] {e}")
+        return {"error": "offline", "data": None}
+    finally:
+        if client:
+            client.close()
 
 
 class MPVRemoteHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
-        # Crea il messaggio di log standard
+        # Create standard log message
         message = format % args
-        # Stampa con \r all'inizio per tornare a inizio riga, 
-        # end="" per non andare a capo e flush=True per aggiornare subito
-        print(f"\r[Realtime Log] {message}".ljust(80), end="", flush=True)
+        # Print \r at beginning of the line, in order to delete the previous log text.
+        # end="" to terminate the string without a new line.
+        # flush=True to update immediately the screen
+
+        # print(f"\r[Realtime Log] {message}".ljust(80), end="", flush=True)
 
     def do_GET(self):
         url = urllib.parse.urlparse(self.path)
@@ -98,47 +193,60 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
 
         # API: Status
         elif path == "/api/status":
-            # Full path of the file currently playing
-            full_path = send_mpv_command(["get_property", "path"]).get("data", "")
+            response = send_mpv_command(["get_property", "path"])
 
-            file_name = ""
-            folder_rel = ""
-            extension = ""
+            # Se mpv è offline, restituiamo uno stato vuoto coerente
+            if "offline" in response:
+                status = {
+                    "pos": 0, "duration": 0, "volume": 0,
+                    "paused": True, "title": "MPV is offline",
+                    "filename": "", "folder": "", "extension": ""
+                }
+            else:
 
-            if full_path:
-                # Extract the file name
-                file_name = os.path.basename(full_path)
-                # Extract the extension
-                extension = os.path.splitext(file_name)[1]
-                # Calcoliamo la cartella relativa rispetto a MEDIA_DIR
-                try:
-                    # Rimuoviamo il prefisso MEDIA_DIR per avere solo la sottocartella
-                    folder_rel = os.path.dirname(os.path.relpath(full_path, os.path.abspath(MEDIA_DIR)))
-                    if folder_rel == ".":
+                full_path = response.get("data", "")
+
+                file_name = ""
+                folder_rel = ""
+                extension = ""
+
+                if full_path:
+                    # Extract the file name
+                    file_name = os.path.basename(full_path)
+                    # Extract the extension
+                    extension = os.path.splitext(file_name)[1]
+                    # Calcoliamo la cartella relativa rispetto a MEDIA_DIR
+                    try:
+                        # Rimuoviamo il prefisso MEDIA_DIR per avere solo la sottocartella
+                        folder_rel = os.path.dirname(os.path.relpath(full_path, os.path.abspath(MEDIA_DIR)))
+                        if folder_rel == ".":
+                            folder_rel = ""
+                    except:
                         folder_rel = ""
-                except:
-                    folder_rel = ""
 
-            status = {
-                "pos": send_mpv_command(["get_property", "time-pos"]).get("data", 0),
-                "duration": send_mpv_command(["get_property", "duration"]).get("data", 0),
-                "volume": send_mpv_command(["get_property", "volume"]).get("data", 100),
-                "paused": send_mpv_command(["get_property", "pause"]).get("data", False),
-                "title": send_mpv_command(["get_property", "media-title"]).get("data", "Select a file"),
-                "filename": file_name,
-                "folder": folder_rel,
-                "extension": extension
-            }
+                status = {
+                    "pos": send_mpv_command(["get_property", "time-pos"]).get("data", 0),
+                    "duration": send_mpv_command(["get_property", "duration"]).get("data", 0),
+                    "volume": send_mpv_command(["get_property", "volume"]).get("data", 100),
+                    "paused": send_mpv_command(["get_property", "pause"]).get("data", False),
+                    "title": send_mpv_command(["get_property", "media-title"]).get("data", "Select a file"),
+                    "filename": file_name,
+                    "folder": folder_rel,
+                    "extension": extension
+                }
             self.send_json(status)
 
         # API: Screenshot
         elif path == "/api/screenshot":
-            temp_img = "/tmp/mpv_thumb.jpg"
-            send_mpv_command(["screenshot-to-file", temp_img, "video"])
-            if os.path.exists(temp_img):
-                self.serve_file(temp_img, 'image/jpeg')
+            response = send_mpv_command(["screenshot-to-file", SCREENSHOT_TEMP, "video"])
+
+            if "offline" in response:
+                self.serve_file("offline.jpg", 'image/jpeg')
             else:
-                self.send_error(404)
+                if os.path.exists(SCREENSHOT_TEMP):
+                    self.serve_file(SCREENSHOT_TEMP, 'image/jpeg')
+                else:
+                    self.send_error(404)
         else:
             self.send_error(404)
 
@@ -153,8 +261,12 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
 
             if cmd == "play_file":
                 file_path = os.path.abspath(os.path.join(MEDIA_DIR, params[0]))
-                subprocess.run(["pkill", "-9", "mpv"])
-                subprocess.Popen(['mpv', f'--input-ipc-server={IPC_SOCKET}', '--idle', '--fullscreen', file_path])
+                # Rileva se il sistema è Windows o Linux
+                if os.name == 'nt':  # Windows
+                    subprocess.run(["taskkill", "/F", "/IM", os.path.basename(MPV_EXE), "/T"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+                else:  # Linux/Unix
+                    subprocess.run(["pkill", "-9", os.path.basename(MPV_EXE)])
+                subprocess.Popen([MPV_EXE, f'--input-ipc-server={IPC_SOCKET}', '--idle', '--fullscreen', file_path])
                 self.send_json({"status": "ok"})
             else:
                 res = send_mpv_command([cmd] + params)
@@ -181,11 +293,11 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
 if __name__ == '__main__':
     if not os.path.exists(MEDIA_DIR):
         print("Media path doesn't exist.")
-        quit()
-    
+        sys.exit(1)
+
     # Recupero Hostname
     hostname = socket.gethostname()
-    
+
     # Recupero IP Locale (metodo robusto che non richiede connessione internet attiva)
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -203,6 +315,6 @@ if __name__ == '__main__':
     print(f"   http://{local_ip}:{PORT}")
     print(f"   http://{hostname}.local:{PORT}      (if mDNS is active)")
     print()
-    
+
     httpd = HTTPServer(('0.0.0.0', PORT), MPVRemoteHandler)
     httpd.serve_forever()

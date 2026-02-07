@@ -13,7 +13,7 @@
 
     <div class="max-w-xl w-full space-y-6 mt-10">
         <div class="vol_card p-4 text-center">
-            <img id="preview" src="" alt="Preview" class="preview-box mb-6">
+            <img id="preview" src="" alt="Loading..." class="preview-box mb-6">
             <h2 id="file-title" class="text-xl font-semibold truncate px-4 text-emerald-400">Waiting server...</h2>
         </div>
 
@@ -251,6 +251,8 @@
 
         function seek(val) { sendCommand('set_property', ['time-pos', parseInt(val)]); }
 
+        function update_screenshot() { document.getElementById('preview').src = `/api/screenshot?t=${new Date().getTime()}`; }
+
         // Update UI every 1 second
         setInterval(async () => {
             try {
@@ -302,8 +304,11 @@
 
         // Update Screenshot every 5 seconds
         setInterval(() => {
-            document.getElementById('preview').src = `/api/screenshot?t=${new Date().getTime()}`;
+            update_screenshot();
         }, 5000);
+
+        // Very first update
+        update_screenshot();
 
     </script>
 </body>

@@ -1,12 +1,10 @@
 # MPV Remote
 
-**Easy**, **Elegant** and **Minimalist**: MPV meets power.
+**Easy**, **Elegant** and **Minimalist**: MPV meets a powerful WebUI.
 
 ---
 
-**MPV Remote** is a lightweight, web-based remote control and media browser designed specifically for the **mpv media player**. It allows you to transform your computer or a headless media server into a home theater system that you can control comfortably from your smartphone or any browser. It has been developed on Linux Mint, but it should work on any modern Linux distribution (such as Ubuntu, Debian, or Fedora) that supports Python 3 and mpv.
-
-Built with **Python** and **Tailwind CSS**, it bridges the gap between the raw power of mpv and the modern need for a beautiful, touch-friendly UI.
+**MPV Remote** is a lightweight, web-based remote control and media browser designed specifically for the **mpv media player**. It allows you to transform your computer or a headless media server into a home theater system that you can control comfortably from your smartphone or any browser. It works on Linux and Windows. Developed on Linux Mint, it should work on any modern Linux distribution (such as Ubuntu, Debian, or Fedora) that supports Python 3 and mpv and also on Raspberry.
 
 ---
 ## Screenshots
@@ -27,16 +25,18 @@ Built with **Python** and **Tailwind CSS**, it bridges the gap between the raw p
 
 ## Quick Start
 
-1. Make sure you have `mpv`, `python` installed on your system.
-2. Clone this repository.
-3. Place your media (or link your media folder) to the path defined in `mpv_remote.py` (default: `./media`), or edit `mpv_remote.py` in order to search media files in your favourite folder.
-4. Launch the application
-5. Open your browser and navigate to `http://<your-ip>:5000`, and enjoy!
+LINUX USERS: Make sure you have `mpv`, `python3` installed on your system.
+WINDOWS USERS: A pre-compiled version of `mpv` is available in the `mpv\` folder as a ZIP archive. Please extract it within that folder or specify a custom path in `config.json`.
+
+1. Clone this repository.
+2. Place your media (or link your media folder) to the path defined in `config.json` (default: `./media`), or edit `config.json` and set the correct path of your media folder.
+3. Launch the application
+4. Open your browser and navigate to `http://<your-ip>:5000`, and enjoy!
 
 ```bash
 git clone https://github.com/TheFax/MPV-Glass-Remote.git
 cd MPV-Glass-Remote
-python src/mpv_remote.py
+python3 mpv_remote.py
 ```
 
 ---
@@ -44,6 +44,8 @@ python src/mpv_remote.py
 ## Philosophy
 
 The main goal of **MPV Remote** is to make the media experience *effortless*.
+
+I am a minimalist when it comes to dependencies. I firmly believe that using a piece of software shouldn't require you to be a programmer or a sysadmin. This project is built for the end-user who values efficiency over complexity: that means no npm, no Docker, and no massive dependency chains to manage. You shouldn't have to install gigabytes of middleware just to perform a simple task. My goal is a "plug-and-play" experience where the code stays out of your way.
 
 * **Extra-Easy**: This application is absolutely easy to start and use.
 * **Visual Hierarchy**: Large control buttons for touch screens.
@@ -74,12 +76,6 @@ It's just you, your Python interpreter, and your media. No Node.js, no Docker, n
 * **Backend**: Python
 * **Frontend**: HTML5, Tailwind CSS, JavaScript
 * **Player**: MPV (via JSON IPC)
-
-The application relies on specific Linux-native features to function correctly:
-
-* **Unix Domain Sockets**: The communication between the web interface and the player happens via `/tmp/mpv-socket`, a mechanism standard in Unix-like environments.
-* **System Commands**: The backend uses `pkill` and `subprocess` to manage the media player instances directly within the OS.
-* **Path Handling**: It uses standard Linux path conventions for file navigation.
 
 While the core logic is Linux-centric, it could potentially run on **macOS** with minor adjustments to the media paths and socket locations, provided `mpv` is installed via Homebrew. However please note that this has not been tested on macOS (yet).
 

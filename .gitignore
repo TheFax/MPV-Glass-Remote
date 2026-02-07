@@ -1,0 +1,16 @@
+# Ignore Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# MPV for windows:
+# remove all folder content
+mpv/*
+# but not "mpv.zip"
+!mpv/mpv.zip
+
+# Media folder
+/media
+
+# dinamic screenshot
+mpv_screenshot.jpg

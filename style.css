@@ -15,8 +15,8 @@ body {
     height: 280px;
     object-fit: contain;
     border-radius: 15px;
-    background: #000;
-    border: 1px solid #222;
+    /*background: #000;*/
+    /*border: 1px solid #222;*/
 }
 
 .btn-ctrl {
