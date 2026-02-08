@@ -11,12 +11,17 @@
 
 <body class="p-4 flex flex-col items-center min-h-screen">
 
+    <!-- Main window -->
     <div class="max-w-xl w-full space-y-6 mt-10">
+        <!-- Top part of the screen, with preview and media title -->
         <div class="vol_card p-4 text-center">
+            <!-- Preview image -->
             <img id="preview" src="" alt="Loading..." class="preview-box mb-6">
+            <!-- Media title -->
             <h2 id="file-title" class="text-xl font-semibold truncate px-4 text-emerald-400">Waiting server...</h2>
         </div>
 
+        <!-- Middle part of the screen, with buttons and sliders -->
         <div class="volumio-card p-8 space-y-6">
             <!-- Progress bar 'media position' -->
             <div class="w-full flex items-center space-x-3">
@@ -65,6 +70,7 @@
                 </button>
             </div>
 
+            <!-- Volume -->
             <div class="flex justify-between items-center pt-4 border-t border-gray-800">
                 <div class="flex items-center space-x-3 w-1/2">
                     <!-- Volume icon -->
@@ -81,6 +87,8 @@
                     <!-- Volume slider -->
                     <input type="range" id="volume" class="w-full" oninput="setVolume(this.value)">
                 </div>
+
+                <!-- Buttons -->
                 <div class="flex space-x-3">
                     <!-- Media browser (modal) -->
                     <button onclick="toggleModal()" class="px-4 py-2 bg-emerald-600 rounded-full text-sm font-bold"><svg
@@ -113,6 +121,7 @@
             </div>
         </div>
 
+        <!-- Lower part of the screen, with media info -->
         <div class="vol_card p-4 text-center">
             <div class="mt-2 space-y-1 text-xs text-gray-500 font-mono">
                 <p id="detail-folder" class="truncate px-4"></p>
@@ -122,19 +131,17 @@
                 </p>
             </div>
         </div>
-
     </div>
 
+    <!-- Modal "Media library"-->
     <div id="file-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center invisible opacity-0 z-50">
         <div class="modal-content p-6 border border-gray-700 w-[95vw] max-w-6xl h-[90vh] flex flex-col">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
                 <h3 class="text-xl font-bold text-emerald-400">Media Library</h3>
                 <button onclick="toggleModal()" class="text-gray-400 text-3xl">&times;</button>
             </div>
-
             <div class="overflow-y-auto flex-grow pr-2">
                 <img id="current-folder-banner" src="" alt="Folder Poster" class="w-full mb-6">
-
                 <div id="file-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
         </div>
@@ -146,6 +153,7 @@
         const video = ['.mp4', '.mkv', '.avi', '.mov', '.m4v'];
 
         async function sendCommand(cmd, params = []) {
+            // Send a command to the backend
             await fetch('/api/control', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -155,38 +163,51 @@
         }
 
         function toggleModal() {
+            // Show/hide the media library modal
             const m = document.getElementById('file-modal');
             const isVisible = m.classList.contains('invisible');
             if (isVisible) {
                 m.classList.remove('invisible', 'opacity-0');
-                loadFiles();
+                loadFiles(); // Load root files when opening the modal (no path specified = root)
             } else {
                 m.classList.add('invisible', 'opacity-0');
             }
         }
 
         async function loadFiles(path = "") {
-            const res = await fetch(`/api/files?path=${encodeURIComponent(path)}`);
+            // Load files from the backend for a given path and display them in the modal
+            const res = await fetch(`/api/files?path=${encodeURIComponent(path)}`); // Fetch files for the specified path
             const data = await res.json();
-            const list = document.getElementById('file-list');
-            const banner = document.getElementById('current-folder-banner');
+            // response example: 
+            // { current_thumb: "url_to_current_folder_thumbnail",
+            //   items: [ { name: "file_or_folder_name", 
+            //              rel_path: "relative_path_from_root",
+            //              is_dir: true_or_false,
+            //              thumb: "optional_thumbnail_url",
+            //              ext: "file_extension" }, 
+            //             ... 
+            //         ] }
+            const list = document.getElementById('file-list'); // Container for file/folder items
+            const banner = document.getElementById('current-folder-banner'); // Banner image element for the current folder
 
             list.innerHTML = "";
 
             // Set the current folder banner if available
             if (data.current_thumb) {
+                // If there is a thumbnail for the current folder, set it as the banner image
                 banner.src = data.current_thumb;
                 banner.style.display = 'block';
             } else {
+                // If there is no thumbnail for the current folder, hide the banner element
                 banner.style.display = 'none';
             }
 
-            // Add the "Back" button if we are not in the root
+            // Add the "Back" button if we are not in the root directory
             if (path !== "" && path !== ".") {
                 const backDiv = document.createElement('div');
                 backDiv.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center mb-4";
 
-                // Set here the path to your "Back" icon
+                // Set here the path to your "Back" image
                 const backThumbPath = "/back.png";
 
                 backDiv.innerHTML = `
@@ -197,10 +218,13 @@
                     </div>
                     `;
 
+                // Attach an onclick event to the "Back" button that loads the parent directory
                 backDiv.onclick = () => {
                     const parent = path.split('/').slice(0, -1).join('/');
                     loadFiles(parent);
                 };
+
+                // Add the "Back" button at the beginning of the list
                 list.prepend(backDiv); // We use 'prepend' to ensure it is always the first item in the list
             }
 
@@ -209,6 +233,7 @@
 
                 div.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center";
 
+                // Determine the thumbnail to display for the file/folder
                 let iconHtml;
                 if (f.thumb) {
                     // If there is a thumb...
@@ -218,10 +243,8 @@
                     iconHtml = '';
                 }
 
-                // Determine file type and its description
+                // Determine the type of the file/folder and set the appropriate text
                 let typeText;
-
-
                 if (f.is_dir) {
                     typeText = "Folder";
                 } else if (audioHighRes.includes(f.ext)) {
@@ -234,6 +257,7 @@
                     typeText = "Unknown";
                 }
 
+                // Set the inner HTML of the div to include the thumbnail/icon, file/folder name, and type
                 div.innerHTML = `
                     ${iconHtml}
                         <div class="flex-grow min-w-0">
@@ -242,19 +266,35 @@
                         </div>
                     `;
 
-                div.onclick = () => f.is_dir ? loadFiles(f.rel_path) : sendCommand('play_file', [f.rel_path]);
+                // Attach an onclick event to the div that either loads the folder's contents or plays the file
+                div.onclick = () => {
+                    if (f.is_dir) {
+                        // If it's a directory, load its contents
+                        loadFiles(f.rel_path);
+                    } else {
+                        // If it's a file, send the play command to the backend with the file's relative path
+                        sendCommand('play_file', [f.rel_path]);
+                    }
+                };
+
                 list.appendChild(div);
             });
         }
 
-        function setVolume(val) { sendCommand('set_property', ['volume', parseInt(val)]); }
+        function setVolume(val) {
+            sendCommand('set_property', ['volume', parseInt(val)]);
+        }
 
-        function seek(val) { sendCommand('set_property', ['time-pos', parseInt(val)]); }
+        function seek(val) {
+            sendCommand('set_property', ['time-pos', parseInt(val)]);
+        }
 
-        function update_screenshot() { document.getElementById('preview').src = `/api/screenshot?t=${new Date().getTime()}`; }
+        function updateScreenshot() {
+            document.getElementById('preview').src = `/api/screenshot?t=${new Date().getTime()}`;
+        }
 
         // Update UI every 1 second
-        setInterval(async () => {
+        async function updateStatus() {
             try {
                 const res = await fetch('/api/status');
                 const s = await res.json();
@@ -300,15 +340,17 @@
                 document.getElementById('curTime').innerText = fmt(s.pos || 0);
                 document.getElementById('durTime').innerText = fmt(s.duration || 0);
             } catch (e) { }
-        }, 1000);
+        }
+
+        // Update status every 1 second
+        setInterval(updateStatus, 1000);
 
         // Update Screenshot every 5 seconds
-        setInterval(() => {
-            update_screenshot();
-        }, 5000);
+        setInterval(updateScreenshot, 5000);
 
         // Very first update
-        update_screenshot();
+        updateScreenshot();
+        updateStatus();
 
     </script>
 </body>
