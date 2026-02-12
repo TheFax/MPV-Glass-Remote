@@ -41,6 +41,38 @@ python3 mpv_remote.py
 
 ---
 
+## config.json
+
+The `config.json` file allows you to customize various settings for MPV Remote. Below is a detailed explanation of each configurable option:
+
+*   **`LINUX_media_dir`**: Specifies the path to your media directory on Linux systems. This is where MPV Remote will look for your audio and video files.
+    *   **Default**: `./media`
+    *   **Example**: `"/home/user/Videos"`
+
+*   **`LINUX_mpv_executable`**: Defines the command or path to the MPV executable on Linux.
+    *   **Default**: `"mpv"` (assumes `mpv` is in your system's PATH)
+    *   **Example**: `"/usr/local/bin/mpv"`
+
+*   **`WINDOWS_media_dir`**: Specifies the path to your media directory on Windows systems.
+    *   **Example**: `"C:\\Users\\YourUser\\Music"` (Note the double backslashes `\\` are required in JSON for path separators)
+
+*   **`WINDOWS_mpv_executable`**: Defines the path to the MPV executable on Windows.
+    *   **Default**: `".\\mpv\\mpv.exe"` (points to the bundled mpv in the `mpv\` folder)
+    *   **Example**: `"C:\\Program Files\\mpv\\mpv.exe"`
+
+*   **`allowed_extensions`**: A list of file extensions that MPV Remote will recognize as playable media. Only files with these extensions will be displayed in the media library.
+    *   **Default**: `[".mp4", ".mkv", ".avi", ".mov", ".m4v", ".mp3", ".flac", ".ogg", ".wav", ".m4a"]`
+    *   **Example**: `[".mp3", ".flac", ".ogg", ".wav", ".m4a"]` (for an audio-only setup)
+
+*   **`port`**: The port number on which the web interface will be accessible. If this port is already in use, the application might fail to start.
+    *   **Default**: `5000`
+
+*   **`audio_device`**: Allows you to specify the audio output device for mpv. Set to `"auto"` to let mpv choose the default audio device. You can find available device names by running `mpv --audio-device=help` in your terminal.
+    *   **Default**: `"auto"`
+    *   **Example**: `"alsa/default"` (for a specific ALSA device on Linux) or `"wasapi/{00000000-0000-0000-0000-000000000000}"` (for a WASAPI device on Windows, replace with actual device ID).
+
+---
+
 ## Philosophy
 
 The main goal of **MPV Remote** is to make the media experience *effortless*.

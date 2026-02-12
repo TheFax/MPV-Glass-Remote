@@ -22,9 +22,9 @@ def load_config():
             config = json.load(f)
 
         if os.name == 'nt':
-            required_keys = ["WINDOWS_media_dir", "allowed_extensions", "port", "WINDOWS_mpv_executable"]
+            required_keys = ["WINDOWS_media_dir", "allowed_extensions", "port", "WINDOWS_mpv_executable", "audio_device"]
         else:
-            required_keys = ["LINUX_media_dir", "allowed_extensions", "port", "LINUX_mpv_executable"]
+            required_keys = ["LINUX_media_dir", "allowed_extensions", "port", "LINUX_mpv_executable", "audio_device"]
 
         missing = [key for key in required_keys if key not in config]
 
@@ -64,6 +64,7 @@ PORT = CONF['port']
 MPV_EXE = CONF['mpv_executable']
 IPC_SOCKET = CONF['ipc_socket']
 SCREENSHOT_TEMP = CONF['screenshot_file']
+AUDIO_DEVICE = CONF['audio_device']
 
 
 def send_mpv_command(command):
@@ -262,11 +263,18 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
             if cmd == "play_file":
                 file_path = os.path.abspath(os.path.join(MEDIA_DIR, params[0]))
                 # Rileva se il sistema è Windows o Linux
-                if os.name == 'nt':  # Windows
+                if os.name == 'nt':  
+                    # Windows
                     subprocess.run(["taskkill", "/F", "/IM", os.path.basename(MPV_EXE), "/T"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-                else:  # Linux/Unix
+                else:  
+                    # Linux/Unix
                     subprocess.run(["pkill", "-9", os.path.basename(MPV_EXE)])
-                subprocess.Popen([MPV_EXE, f'--input-ipc-server={IPC_SOCKET}', '--idle', '--fullscreen', file_path])
+                subprocess.Popen([MPV_EXE,
+                                 f'--input-ipc-server={IPC_SOCKET}',
+                                 '--idle',
+                                 '--fullscreen',
+                                 f'--audio-device={AUDIO_DEVICE}',
+                                 file_path])
                 self.send_json({"status": "ok"})
             else:
                 res = send_mpv_command([cmd] + params)

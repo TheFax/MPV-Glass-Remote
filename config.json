@@ -5,6 +5,9 @@
     "WINDOWS_media_dir": "Z:\\MP3 definitivi",
     "WINDOWS_mpv_executable": ".\\mpv\\mpv.exe",
 
-    "allowed_extensions": [".mp4", ".mkv", ".avi", ".mov", ".m4v", ".mp3", ".flac"],
-    "port": 5000
+    "allowed_extensions": [".mp4", ".mkv", ".avi", ".mov", ".m4v",
+                           ".mp3", ".flac", ".ogg", ".wav", ".m4a"],
+    "port": 5000,
+
+    "audio_device": "auto"
 }
