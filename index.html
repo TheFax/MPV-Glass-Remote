@@ -206,7 +206,7 @@
             }
 
             // Add the "Back" button if we are not in the root directory
-            if (path !== "" && path !== ".") {
+                if (path !== "" && path !== ".") {
                 const backDiv = document.createElement('div');
                 backDiv.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center mb-4";
 
@@ -222,9 +222,12 @@
                     `;
 
                 // Attach an onclick event to the "Back" button that loads the parent directory
-                backDiv.onclick = () => {
+                backDiv.onclick = async () => {
                     const parent = path.split('/').slice(0, -1).join('/');
-                    loadFiles(parent);
+                    await loadFiles(parent);
+                    latest_folder = parent;
+                    const sc = document.querySelector('#file-modal .overflow-y-auto');
+                    if (sc) sc.scrollTop = 0;
                 };
 
                 // Add the "Back" button at the beginning of the list
@@ -270,11 +273,13 @@
                     `;
 
                 // Attach an onclick event to the div that either loads the folder's contents or plays the file
-                div.onclick = () => {
+                div.onclick = async () => {
                     if (f.is_dir) {
-                        // If it's a directory, load its contents
-                        loadFiles(f.rel_path);
                         latest_folder = f.rel_path;
+                        // If it's a directory, load its contents
+                        await loadFiles(f.rel_path);
+                        const sc = document.querySelector('#file-modal .overflow-y-auto');
+                        if (sc) sc.scrollTop = 0;
                     } else {
                         // If it's a file, send the play command to the backend with the file's relative path
                         sendCommand('play_file', [f.rel_path]);
