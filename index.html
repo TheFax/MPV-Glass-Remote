@@ -151,6 +151,7 @@
         const audioLowRes = ['.mp3', '.ogg', '.m4a', 'opus'];
         const audioHighRes = ['.flac', '.wav'];
         const video = ['.mp4', '.mkv', '.avi', '.mov', '.m4v'];
+        let latest_folder = "";
 
         async function sendCommand(cmd, params = []) {
             // Send a command to the backend
@@ -159,7 +160,9 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ cmd, params })
             });
-            if (cmd === 'play_file') toggleModal(); // Close modal on file play
+            if (cmd === 'play_file') {
+                toggleModal(); // Close modal on file play
+            }
         }
 
         function toggleModal() {
@@ -168,7 +171,7 @@
             const isVisible = m.classList.contains('invisible');
             if (isVisible) {
                 m.classList.remove('invisible', 'opacity-0');
-                loadFiles(); // Load root files when opening the modal (no path specified = root)
+                loadFiles(latest_folder); // Load root files when opening the modal
             } else {
                 m.classList.add('invisible', 'opacity-0');
             }
@@ -271,6 +274,7 @@
                     if (f.is_dir) {
                         // If it's a directory, load its contents
                         loadFiles(f.rel_path);
+                        latest_folder = f.rel_path;
                     } else {
                         // If it's a file, send the play command to the backend with the file's relative path
                         sendCommand('play_file', [f.rel_path]);
