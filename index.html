@@ -30,10 +30,19 @@
                 <span id="durTime" class="text-s text-gray-400 w-10">0:00</span>
             </div>
 
-            <div class="flex justify-center items-center space-x-8">
+            <div class="flex justify-center items-center space-x-4">
+                <!-- Previous track -->
+                <button onclick="sendCommand('playlist-prev')" class="btn-ctrl text-xl" title="Inizio brano">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor"
+                        class="bi bi-skip-backward" viewBox="0 0 16 16">
+                        <path
+                            d="M.5 3.5A.5.5 0 0 1 1 4v3.248l6.267-3.636c.52-.302 1.233.043 1.233.696v2.94l6.267-3.636c.52-.302 1.233.043 1.233.696v7.384c0 .653-.713.998-1.233.696L8.5 8.752v2.94c0 .653-.713.998-1.233.696L1 8.752V12a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5m7 1.133L1.696 8 7.5 11.367zm7.5 0L9.196 8 15 11.367z" />
+                    </svg>
+                </button>
+
                 <!-- Rewind -->
                 <button onclick="sendCommand('seek', [-10])" class="btn-ctrl text-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor"
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
                         class="bi bi-rewind" viewBox="0 0 16 16">
                         <path
                             d="M9.196 8 15 4.633v6.734zm-.792-.696a.802.802 0 0 0 0 1.392l6.363 3.692c.52.302 1.233-.043 1.233-.696V4.308c0-.653-.713-.998-1.233-.696z" />
@@ -60,12 +69,21 @@
 
                 <!-- Fast forward -->
                 <button onclick="sendCommand('seek', [10])" class="btn-ctrl text-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor"
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
                         class="bi bi-fast-forward" viewBox="0 0 16 16">
                         <path
                             d="M6.804 8 1 4.633v6.734zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C.713 12.69 0 12.345 0 11.692V4.308c0-.653.713-.998 1.233-.696z" />
                         <path
                             d="M14.804 8 9 4.633v6.734zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C8.713 12.69 8 12.345 8 11.692V4.308c0-.653.713-.998 1.233-.696z" />
+                    </svg>
+                </button>
+
+                <!-- Next track -->
+                <button onclick="sendCommand('playlist-next')" class="btn-ctrl text-xl" title="Brano successivo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor"
+                        class="bi bi-skip-forward" viewBox="0 0 16 16">
+                        <path
+                            d="M15.5 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V8.752l-6.267 3.636c-.52.302-1.233-.043-1.233-.696v-2.94l-6.267 3.636C.713 12.69 0 12.345 0 11.692V4.308c0-.653.713-.998 1.233-.696L7.5 7.248v-2.94c0-.653.713-.998 1.233-.696L15 7.248V4a.5.5 0 0 1 .5-.5M1 4.633v6.734L6.804 8zm7.5 0v6.734L14.304 8z" />
                     </svg>
                 </button>
             </div>
@@ -129,6 +147,7 @@
                     <span id="detail-filename" class="text-gray-400"></span><br>
                     <span id="detail-extension" class="text-emerald-600 font-bold"></span>
                 </p>
+                <p id="queue-count" class="truncate px-4 text-emerald-300"></p>
             </div>
         </div>
     </div>
@@ -171,15 +190,29 @@
         }
 
         async function sendCommand(cmd, params = []) {
-            // Send a command to the backend
-            await fetch('/api/control', {
+            // Send a command to the backend and parse JSON response
+            const res = await fetch('/api/control', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ cmd, params })
             });
+
+            let data = {};
+            try {
+                data = await res.json();
+            } catch (e) { /* ignore parse errors */ }
+
             if (cmd === 'play_file') {
                 toggleModal(); // Close modal on file play
+                // If backend returned number of queued items, show it
+                if (data && typeof data.queued !== 'undefined') {
+                    const q = parseInt(data.queued) || 0;
+                    const el = document.getElementById('queue-count');
+                    el.innerText = `${q} media on playlist`;
+                }
             }
+
+            return data;
         }
 
         function toggleModal() {
@@ -240,21 +273,7 @@
 
                 // Attach an onclick event to the "Back" button that loads the parent directory
                 backDiv.onclick = async () => {
-                    // Calculate parent directory correctly (works on both Windows and Linux)
-                    const parent = getParentPath(path);
-                    
-                    console.log(`Going back from '${path}' to '${parent}'`);
-                    
-                    previousPath = path; // Save the current path to scroll to it later
-                    await loadFiles(parent);
-                    latest_folder = parent;
-                    const sc = document.querySelector('#file-modal .overflow-y-auto');
-                    if (sc) sc.scrollTop = 0;
-                    
-                    // Scroll to the folder we came from
-                    setTimeout(() => {
-                        scrollToFolder(path);
-                    }, 100);
+                    await goBackDirectory(path);
                 };
 
                 // Add the "Back" button at the beginning of the list
@@ -393,7 +412,7 @@
         let touchstartX = 0;
         let touchendX = 0;
 
-        const gestureZone = document.getElementById('preview'); // O qualsiasi elemento desideri
+        const gestureZone = document.getElementById('file-modal');
 
         gestureZone.addEventListener('touchstart', e => {
             touchstartX = e.changedTouches[0].screenX;
@@ -407,12 +426,32 @@
         function handleGesture() {
             if (touchendX < touchstartX - 50) {
                 console.log('Swipe a sinistra');
-                
+                goBackDirectory();
             }
 
             if (touchendX > touchstartX + 50) {
                 console.log('Swipe a destra');
-                
+                goBackDirectory();
+            }
+        }
+
+        async function goBackDirectory(currentPath = null) {
+            // Use the provided path or the current latest_folder
+            const fromPath = currentPath || latest_folder;
+            // Go back to the parent directory
+            const parent = getParentPath(fromPath);
+
+            // Only go back if we're not already at root
+            if (parent !== fromPath) {
+                await loadFiles(parent);
+                latest_folder = parent;
+                const sc = document.querySelector('#file-modal .overflow-y-auto');
+                if (sc) sc.scrollTop = 0;
+
+                // Scroll to the folder we came from
+                setTimeout(() => {
+                    scrollToFolder(fromPath);
+                }, 100);
             }
         }
 
@@ -422,7 +461,7 @@
             const normalizedFolderPath = normalizePath(folderPath);
             const list = document.getElementById('file-list');
             const items = list.querySelectorAll('[data-rel-path]');
-            
+
             for (let item of items) {
                 // Normalize the data path for comparison (works on both Windows and Linux)
                 const itemPath = normalizePath(item.getAttribute('data-rel-path'));
