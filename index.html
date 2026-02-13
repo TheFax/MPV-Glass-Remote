@@ -151,7 +151,24 @@
         const audioLowRes = ['.mp3', '.ogg', '.m4a', 'opus'];
         const audioHighRes = ['.flac', '.wav'];
         const video = ['.mp4', '.mkv', '.avi', '.mov', '.m4v'];
-        let latest_folder = "";
+        let latest_folder = ""; // Track the path where browser was when it was open before a play or before a "X"
+        let previousPath = ""; // Track the path to scroll to after going back
+
+        // Normalize path to use forward slashes (works on both Windows and Linux)
+        function normalizePath(p) {
+            return p.replace(/\\/g, '/');
+        }
+
+        // Get parent directory (compatible with both Windows and Linux paths)
+        function getParentPath(p) {
+            p = normalizePath(p).trim();
+            if (p.endsWith('/')) {
+                p = p.slice(0, -1);
+            }
+            const parts = p.split('/');
+            parts.pop(); // Remove the last part
+            return parts.join('/');
+        }
 
         async function sendCommand(cmd, params = []) {
             // Send a command to the backend
@@ -171,7 +188,7 @@
             const isVisible = m.classList.contains('invisible');
             if (isVisible) {
                 m.classList.remove('invisible', 'opacity-0');
-                loadFiles(latest_folder); // Load root files when opening the modal
+                loadFiles(latest_folder);
             } else {
                 m.classList.add('invisible', 'opacity-0');
             }
@@ -223,11 +240,21 @@
 
                 // Attach an onclick event to the "Back" button that loads the parent directory
                 backDiv.onclick = async () => {
-                    const parent = path.split('/').slice(0, -1).join('/');
+                    // Calculate parent directory correctly (works on both Windows and Linux)
+                    const parent = getParentPath(path);
+                    
+                    console.log(`Going back from '${path}' to '${parent}'`);
+                    
+                    previousPath = path; // Save the current path to scroll to it later
                     await loadFiles(parent);
                     latest_folder = parent;
                     const sc = document.querySelector('#file-modal .overflow-y-auto');
                     if (sc) sc.scrollTop = 0;
+                    
+                    // Scroll to the folder we came from
+                    setTimeout(() => {
+                        scrollToFolder(path);
+                    }, 100);
                 };
 
                 // Add the "Back" button at the beginning of the list
@@ -238,6 +265,7 @@
                 const div = document.createElement('div');
 
                 div.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center";
+                div.setAttribute('data-rel-path', f.rel_path); // Add attribute to track folder path
 
                 // Determine the thumbnail to display for the file/folder
                 let iconHtml;
@@ -385,6 +413,28 @@
             if (touchendX > touchstartX + 50) {
                 console.log('Swipe a destra');
                 
+            }
+        }
+
+        function scrollToFolder(folderPath) {
+            // Find the folder element with the matching rel_path and scroll to it
+            // Normalize the path we're looking for
+            const normalizedFolderPath = normalizePath(folderPath);
+            const list = document.getElementById('file-list');
+            const items = list.querySelectorAll('[data-rel-path]');
+            
+            for (let item of items) {
+                // Normalize the data path for comparison (works on both Windows and Linux)
+                const itemPath = normalizePath(item.getAttribute('data-rel-path'));
+                if (itemPath === normalizedFolderPath) {
+                    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Optional: add a highlight effect
+                    item.classList.add('highlight-folder');
+                    setTimeout(() => {
+                        item.classList.remove('highlight-folder');
+                    }, 1000);
+                    break;
+                }
             }
         }
 
