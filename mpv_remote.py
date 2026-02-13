@@ -366,4 +366,11 @@ if __name__ == '__main__':
     print()
 
     httpd = HTTPServer(('0.0.0.0', PORT), MPVRemoteHandler)
-    httpd.serve_forever()
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\nShutting down server...")
+        httpd.server_close()
+    except Exception as e:
+        print(f"\nServer error: {e}")
+        httpd.server_close()
