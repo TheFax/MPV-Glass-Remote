@@ -206,7 +206,7 @@
             }
 
             // Add the "Back" button if we are not in the root directory
-                if (path !== "" && path !== ".") {
+            if (path !== "" && path !== ".") {
                 const backDiv = document.createElement('div');
                 backDiv.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center mb-4";
 
@@ -360,6 +360,33 @@
         // Very first update
         updateScreenshot();
         updateStatus();
+
+        // SWIPE sensors
+        let touchstartX = 0;
+        let touchendX = 0;
+
+        const gestureZone = document.getElementById('preview'); // O qualsiasi elemento desideri
+
+        gestureZone.addEventListener('touchstart', e => {
+            touchstartX = e.changedTouches[0].screenX;
+        });
+
+        gestureZone.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            handleGesture();
+        });
+
+        function handleGesture() {
+            if (touchendX < touchstartX - 50) {
+                console.log('Swipe a sinistra');
+                
+            }
+
+            if (touchendX > touchstartX + 50) {
+                console.log('Swipe a destra');
+                
+            }
+        }
 
     </script>
 </body>

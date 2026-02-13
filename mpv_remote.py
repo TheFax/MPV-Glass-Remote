@@ -43,6 +43,16 @@ def load_config():
             config["ipc_socket"] = "/tmp/mpv-socket"
             config["screenshot_file"] = "/tmp/mpv_screenshot.jpg"
 
+        # Optional autoplay settings: list of extensions to auto-queue and maximum items
+        # `autoplay_extensions` can be like [".mp4", ".mkv"] or ["mp4","mkv"] in config.json
+        config["autoplay_extensions"] = config.get("autoplay_extensions", [])
+        if not isinstance(config["autoplay_extensions"], list):
+            config["autoplay_extensions"] = []
+        # Normalize extensions to start with a dot and be lowercase
+        config["autoplay_extensions"] = [ (e.lower() if e.startswith('.') else f'.{e.lower()}') for e in config["autoplay_extensions"] ]
+
+        config["autoplay_max"] = int(config.get("autoplay_max", 20))
+
         return config
 
     except json.JSONDecodeError as e:
@@ -261,21 +271,52 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
             params = data.get('params', [])
 
             if cmd == "play_file":
-                file_path = os.path.abspath(os.path.join(MEDIA_DIR, params[0]))
-                # Rileva se il sistema è Windows o Linux
-                if os.name == 'nt':  
-                    # Windows
+                # Resolve absolute path of requested file
+                rel_requested = params[0]
+                file_path = os.path.abspath(os.path.join(MEDIA_DIR, rel_requested))
+
+                # Stop any running mpv instance (best-effort)
+                if os.name == 'nt':
                     subprocess.run(["taskkill", "/F", "/IM", os.path.basename(MPV_EXE), "/T"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-                else:  
-                    # Linux/Unix
+                else:
                     subprocess.run(["pkill", "-9", os.path.basename(MPV_EXE)])
-                subprocess.Popen([MPV_EXE,
-                                 f'--input-ipc-server={IPC_SOCKET}',
-                                 '--idle',
-                                 '--fullscreen',
-                                 f'--audio-device={AUDIO_DEVICE}',
-                                 file_path])
-                self.send_json({"status": "ok"})
+
+                # Build playlist: start from requested file and include up to autoplay_max files
+                playlist = [file_path]
+                try:
+                    autoplay_exts = set(CONF.get('autoplay_extensions', []))
+                    max_items = int(CONF.get('autoplay_max', 20))
+                    if autoplay_exts:
+                        folder = os.path.dirname(file_path)
+                        # List files in same folder, sorted
+                        entries = sorted([f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))], key=lambda s: s.lower())
+                        # Keep only files matching autoplay extensions
+                        matches = [os.path.join(folder, e) for e in entries if os.path.splitext(e)[1].lower() in autoplay_exts]
+                        # Find index of requested file in matches
+                        idx = -1
+                        try:
+                            idx = matches.index(file_path)
+                        except ValueError:
+                            base = os.path.basename(file_path)
+                            for i, p in enumerate(matches):
+                                if os.path.basename(p) == base:
+                                    idx = i
+                                    break
+                        if idx != -1:
+                            playlist = matches[idx: idx + max_items]
+                except Exception:
+                    # On any error, fall back to single-file playback
+                    playlist = [file_path]
+
+                # Launch mpv with the playlist so mpv will handle advancing to next files
+                cmd = [MPV_EXE,
+                       f'--input-ipc-server={IPC_SOCKET}',
+                       '--idle',
+                       '--fullscreen',
+                       f'--audio-device={AUDIO_DEVICE}'] + playlist
+
+                subprocess.Popen(cmd)
+                self.send_json({"status": "ok", "queued": len(playlist)})
             else:
                 res = send_mpv_command([cmd] + params)
                 self.send_json(res)
