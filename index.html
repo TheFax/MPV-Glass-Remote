@@ -411,22 +411,29 @@
         // SWIPE sensors
         let touchstartX = 0;
         let touchendX = 0;
+        let touchstartY = 0;
+        let touchendY = 0;
 
         const gestureZone = document.getElementById('file-modal');
 
         gestureZone.addEventListener('touchstart', e => {
             touchstartX = e.changedTouches[0].screenX;
+            touchstartY = e.changedTouches[0].screenY;
         });
 
         gestureZone.addEventListener('touchend', e => {
             touchendX = e.changedTouches[0].screenX;
+            touchendY = e.changedTouches[0].screenY;
             handleGesture();
         });
 
         function handleGesture() {
-            
+            if (Math.abs(touchstartY - touchendY) > 100) {
+                // Ignore if user is "scrolling" the list
+                return;
+            }
             if (touchendX < touchstartX - 120) {
-                // console.log('Swipe a sinistra');
+                // Left swipe
                 if (latest_folder == "") {
                     toggleModal(); // If we are already in root, close the modal
                 } else {
@@ -435,7 +442,7 @@
             }
 
             if (touchendX > touchstartX + 120) {
-                // console.log('Swipe a destra');
+                // Right swipe
                 if (latest_folder == "") {
                     toggleModal(); // If we are already in root, close the modal
                 } else {
