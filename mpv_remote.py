@@ -313,6 +313,7 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
                        f'--input-ipc-server={IPC_SOCKET}',
                        '--idle',
                        '--fullscreen',
+                       '--volume=80',
                        f'--audio-device={AUDIO_DEVICE}'] + playlist
 
                 subprocess.Popen(cmd)
