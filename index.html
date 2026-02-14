@@ -424,7 +424,8 @@
         });
 
         function handleGesture() {
-            if (touchendX < touchstartX - 250) {
+            
+            if (touchendX < touchstartX - 120) {
                 // console.log('Swipe a sinistra');
                 if (latest_folder == "") {
                     toggleModal(); // If we are already in root, close the modal
@@ -433,7 +434,7 @@
                 }
             }
 
-            if (touchendX > touchstartX + 250) {
+            if (touchendX > touchstartX + 120) {
                 // console.log('Swipe a destra');
                 if (latest_folder == "") {
                     toggleModal(); // If we are already in root, close the modal
