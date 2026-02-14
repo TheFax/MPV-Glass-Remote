@@ -290,7 +290,7 @@
                 let iconHtml;
                 if (f.thumb) {
                     // If there is a thumb...
-                    iconHtml = `<img src="${f.thumb}" class="folder-thumb">`;
+                    iconHtml = `<img loading="lazy" src="${f.thumb}" class="folder-thumb">`;
                 } else {
                     // If there is not a thumb...
                     iconHtml = '';
@@ -424,14 +424,22 @@
         });
 
         function handleGesture() {
-            if (touchendX < touchstartX - 50) {
-                console.log('Swipe a sinistra');
-                goBackDirectory();
+            if (touchendX < touchstartX - 250) {
+                // console.log('Swipe a sinistra');
+                if (latest_folder == "") {
+                    toggleModal(); // If we are already in root, close the modal
+                } else {
+                    goBackDirectory();
+                }
             }
 
-            if (touchendX > touchstartX + 50) {
-                console.log('Swipe a destra');
-                goBackDirectory();
+            if (touchendX > touchstartX + 250) {
+                // console.log('Swipe a destra');
+                if (latest_folder == "") {
+                    toggleModal(); // If we are already in root, close the modal
+                } else {
+                    goBackDirectory();
+                }
             }
         }
 

@@ -141,7 +141,7 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
         # end="" to terminate the string without a new line.
         # flush=True to update immediately the screen
 
-        # print(f"\r[Realtime Log] {message}".ljust(80), end="", flush=True)
+        # print(f"[Realtime Log] {message}".ljust(80), flush=True)
 
     def do_GET(self):
         url = urllib.parse.urlparse(self.path)

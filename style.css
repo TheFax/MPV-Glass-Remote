@@ -138,6 +138,12 @@ input[type=range] {
     box-shadow: 0 0 20px rgba(0, 209, 178, 0.3) !important;
 }
 
+
+.truncate {
+    white-space: normal !important;
+}
+
+
 /* Responsive fixes for small screens (smartphones) */
 @media (max-width: 500px) {
     .truncate {
@@ -151,15 +157,15 @@ input[type=range] {
 
     /* Modal: occupa quasi tutto lo schermo e padding ridotto */
     .modal-content {
-        width: 100vw !important;
-        max-width: 100vw !important;
-        height: 100vh !important;
-        padding: 12px !important;
+
+        padding: 8px !important;
 
     }
 
     #file-modal {
-        margin: 0px;
+        margin-top: 60px;
+        border: none;
+        border-radius: unset;
     }
 
     /* Range slider più grande e più facile da toccare */
