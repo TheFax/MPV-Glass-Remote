@@ -1,22 +1,15 @@
 # THIS IS NOT A SCRIPT.
 # YOU CANNOT RUN THIS.
-# This file contains a list of properties and commands suitable for mpv.
 # You can delete this file: this is only used for study purpose only.
 
-quit()
-
-
-
-
+# List properties and commands
 import time
 time.sleep(1)
 print(send_mpv_command(["get_property", "property-list"]).get("data", []))
 print(send_mpv_command(["get_property", "command-list"]).get("data", []))
 
 
-
-
-
+# Ask all available properties to MPV, via IPC and save the result into a file
 import time
 time.sleep(1)
 props=(send_mpv_command(["get_property", "property-list"]).get("data", []))
