@@ -1,14 +1,8 @@
 # THIS IS NOT A SCRIPT.
-# This fail contains a list of properties and commands suitable for mpv.
+# This file contains a list of properties and commands suitable for mpv.
+# You can delete this file: this is only used for study purpose only.
 
-                # import time
-                # time.sleep(1)
-                # print(send_mpv_command(["get_property", "property-list"]).get("data", "NO"))
-                # print(send_mpv_command(["get_property", "command-list"]).get("data", "NO"))
-
-
-
-# print(send_mpv_command(["get_property", "property-list"]).get("data", ""))
+# print(send_mpv_command(["get_property", "property-list"]).get("data", []))
 
 ['pid',
  'speed',
@@ -982,7 +976,7 @@
  'oremove-metadata']
 
 
-# print(send_mpv_command(["get_property", "command-list"]).get("data", ""))
+# print(send_mpv_command(["get_property", "command-list"]).get("data", []))
 [{'name': 'ignore',
   'args': [],
   'vararg': False},
