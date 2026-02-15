@@ -25,8 +25,9 @@
 
 ## Quick Start
 
-LINUX USERS: Make sure you have `mpv`, `python3` installed on your system.
-WINDOWS USERS: A pre-compiled version of `mpv` is available in the `mpv\` folder as a ZIP archive. Please extract it within that folder or specify a custom path in `config.json`.
+**LINUX USERS**: Make sure you have `mpv`, `python3` installed on your system.
+
+**WINDOWS USERS**: A pre-compiled version of `mpv` is available in the `mpv\` folder as a ZIP archive. Please extract it within that folder. If you don't trust the included version, you can specify the path in `config.json` where your trusted version is placed, or overwrite the bundled version with another one.
 
 1. Clone this repository.
 2. Place your media (or link your media folder) to the path defined in `config.json` (default: `./media`), or edit `config.json` and set the correct path of your media folder.
@@ -63,6 +64,12 @@ The `config.json` file allows you to customize various settings for MPV Remote. 
 *   **`allowed_extensions`**: A list of file extensions that MPV Remote will recognize as playable media. Only files with these extensions will be displayed in the media library.
     *   **Default**: `[".mp4", ".mkv", ".avi", ".mov", ".m4v", ".mp3", ".flac", ".ogg", ".wav", ".m4a"]`
     *   **Example**: `[".mp3", ".flac", ".ogg", ".wav", ".m4a"]` (for an audio-only setup)
+
+*   **`autoplay_extensions`**: A list of file extensions that trigger the automatic playlist generator. MPV will play the file you clicked and when it is finished, it continue with next files in the same folder.
+    *   **Default**: `[".mp3", ".flac", ".ogg", ".wav", ".m4a"]`
+
+*   **`autoplay_max`**: If automatic playlist is triggered, it adds a maximum amount of file in the list. This is useful to avoid creating a playlist with hundreds of songs if you click on a file in a folder with a huge amount of media.
+    *   **Default**: `20`
 
 *   **`port`**: The port number on which the web interface will be accessible. If this port is already in use, the application might fail to start.
     *   **Default**: `5000`

@@ -327,7 +327,7 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
 
                 subprocess.Popen(cmd)
 
-                # See IPC_notes fragments
+                # You can add here "IPC_notes" fragments, for study and debug purpose.
 
                 self.send_json({"status": "ok"})
             else:
