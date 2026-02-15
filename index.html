@@ -30,6 +30,7 @@
                 <span id="durTime" class="text-s text-gray-400 w-10">0:00</span>
             </div>
 
+            <!-- Buttons -->
             <div class="flex justify-center items-center space-x-4">
                 <!-- Previous track -->
                 <button onclick="sendCommand('playlist-prev')" class="btn-ctrl text-xl" title="Inizio brano">
@@ -88,7 +89,7 @@
                 </button>
             </div>
 
-            <!-- Volume -->
+            <!-- Volume icon and slider -->
             <div class="flex justify-between items-center pt-4 border-t border-gray-800">
                 <div class="flex items-center space-x-3 w-1/2">
                     <!-- Volume icon -->
@@ -204,12 +205,6 @@
 
             if (cmd === 'play_file') {
                 toggleModal(); // Close modal on file play
-                // If backend returned number of queued items, show it
-                if (data && typeof data.queued !== 'undefined') {
-                    const q = parseInt(data.queued) || 0;
-                    const el = document.getElementById('queue-count');
-                    el.innerText = `${q} media on playlist`;
-                }
             }
 
             return data;
@@ -378,6 +373,11 @@
                 document.getElementById('progress').max = s.duration || 0;
                 document.getElementById('progress').value = s.pos || 0;
                 document.getElementById('volume').value = s.volume || 0;
+                if (s.playlist_count != "") {
+                    document.getElementById('queue-count').innerText = "Playlist position: " + s.playlist_pos + "/" + s.playlist_count;
+                } else {
+                    document.getElementById('queue-count').innerText = "No file loaded";
+                }
 
                 const playSvg = document.getElementById('svg-play');
                 const pauseSvg = document.getElementById('svg-pause');

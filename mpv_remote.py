@@ -209,9 +209,16 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
             # Se mpv è offline, restituiamo uno stato vuoto coerente
             if "offline" in response:
                 status = {
-                    "pos": 0, "duration": 0, "volume": 0,
-                    "paused": True, "title": "MPV is offline",
-                    "filename": "", "folder": "", "extension": ""
+                    "pos": 0,
+                    "duration": 0,
+                    "volume": 0,
+                    "paused": True,
+                    "title": "Select a file to play...",
+                    "filename": "",
+                    "folder": "",
+                    "extension": "",
+                    "playlist_pos": "",
+                    "playlist_count": ""
                 }
             else:
 
@@ -243,7 +250,9 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
                     "title": send_mpv_command(["get_property", "media-title"]).get("data", "Select a file"),
                     "filename": file_name,
                     "folder": folder_rel,
-                    "extension": extension
+                    "extension": extension,
+                    "playlist_pos":  send_mpv_command(["get_property", "playlist-pos-1"]).get("data", ""),
+                    "playlist_count":   send_mpv_command(["get_property", "playlist-count"]).get("data", "")
                 }
             self.send_json(status)
 
@@ -317,7 +326,8 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
                        f'--audio-device={AUDIO_DEVICE}'] + playlist
 
                 subprocess.Popen(cmd)
-                self.send_json({"status": "ok", "queued": len(playlist)})
+
+                self.send_json({"status": "ok"})
             else:
                 res = send_mpv_command([cmd] + params)
                 self.send_json(res)
