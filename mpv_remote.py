@@ -141,7 +141,7 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
         # end="" to terminate the string without a new line.
         # flush=True to update immediately the screen
 
-        # print(f"[Realtime Log] {message}".ljust(80), flush=True)
+        print(f"[Realtime Log] {message}".ljust(80), flush=True)
 
     def do_GET(self):
         url = urllib.parse.urlparse(self.path)
@@ -149,12 +149,14 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
         path = url.path
 
         # Index
-        if path == "/" or path == "/index.html":
-            self.serve_file('index.html', 'text/html')
-
+        if path == "/":
+            print(f"try to serve homepage")
+            self.serve_file('./template/index.html', 'text/html')
+            
         # Static files
-        elif os.path.isfile(path.lstrip('/')):
-            self.serve_file(path.lstrip('/'))
+        elif os.path.isfile("./template/" + path.lstrip('/')):
+            self.serve_file("./template/" + path.lstrip('/'))
+            print(f"Try: ./template/{{path.lstrip('/')}}")
 
         # API: List Files
         elif path == "/api/files":
