@@ -195,6 +195,7 @@
         const video = ['.mp4', '.mkv', '.avi', '.mov', '.m4v'];
         let latest_folder = ""; // Track the path where browser was when it was open before a play or before a "X"
         let previousPath = ""; // Track the path to scroll to after going back
+        let sorting = ""; // Save latest sorting method selected by the user
 
         // Normalize path to use forward slashes (works on both Windows and Linux)
         function normalizePath(p) {
@@ -232,25 +233,26 @@
             return data;
         }
 
-        function toggleModal(sorting = "") {
+        function toggleModal(selected_sorting = "") {
             // Show/hide the media library modal
             const m = document.getElementById('file-modal');
             const isVisible = m.classList.contains('invisible');
+            sorting = selected_sorting;
             if (isVisible) {
                 m.classList.remove('invisible', 'opacity-0');
-                loadFiles(latest_folder, sorting);
+                loadFiles(latest_folder);
             } else {
                 m.classList.add('invisible', 'opacity-0');
             }
         }
 
-        async function loadFiles(path = "", sorting = "") {
+        async function loadFiles(path = "") {
             // Load files from the backend for a given path and display them in the modal
             let res;
-            if (sorting == "sort") {
-                res = await fetch(`/api/files?path=${encodeURIComponent(path)}`); // Fetch files for the specified path
-            } else {
+            if (sorting == "random") {
                 res = await fetch(`/api/files_random?path=${encodeURIComponent(path)}`); // Fetch files for the specified path
+            } else {
+                res = await fetch(`/api/files?path=${encodeURIComponent(path)}`); // Fetch files for the specified path
             }
 
             const data = await res.json();
