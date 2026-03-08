@@ -144,6 +144,39 @@ input[type=range] {
 }
 
 
+/* La riga che contiene volume + bottoni diventa colonnare */
+.volumio-card>.flex.justify-between.items-center {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/* Il contenitore della volume bar occupa tutta la larghezza */
+.volumio-card>.flex.justify-between.items-center .w-1\/2 {
+    width: 100% !important;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* I bottoni si posizionano su una riga separata, allineati a destra */
+.volumio-card>.flex.justify-between.items-center .flex.space-x-3 {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Assicura che l'icona volume non sia troppo piccola e separata dallo slider */
+.volumio-card .flex.items-center.space-x-3 span.text-gray-400 {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+}
+
+
 /* Responsive fixes for small screens (smartphones) */
 @media (max-width: 500px) {
     .truncate {
@@ -199,38 +232,6 @@ input[type=range] {
         gap: 8px;
         align-items: center;
         justify-items: center;
-    }
-
-    /* La riga che contiene volume + bottoni diventa colonnare */
-    .volumio-card>.flex.justify-between.items-center {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    /* Il contenitore della volume bar occupa tutta la larghezza */
-    .volumio-card>.flex.justify-between.items-center .w-1\/2 {
-        width: 100% !important;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    /* I bottoni si posizionano su una riga separata, allineati a destra */
-    .volumio-card>.flex.justify-between.items-center .flex.space-x-3 {
-        width: 100%;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-    }
-
-    /* Assicura che l'icona volume non sia troppo piccola e separata dallo slider */
-    .volumio-card .flex.items-center.space-x-3 span.text-gray-400 {
-        flex: 0 0 auto;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
     }
 
     .volumio-card .flex.justify-center.items-center.space-x-4>button:nth-child(1) {

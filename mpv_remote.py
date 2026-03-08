@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import socket
+import random
 import subprocess
 import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -148,16 +149,15 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
 
         # Index
         if path == "/":
-            print(f"try to serve homepage")
             self.serve_file('./template/index.html', 'text/html')
 
         # Static files
         elif os.path.isfile("./template/" + path.lstrip('/')):
             self.serve_file("./template/" + path.lstrip('/'))
-            print(f"Try: ./template/{{path.lstrip('/')}}")
+
 
         # API: List Files
-        elif path == "/api/files":
+        elif path == "/api/files" or path == "/api/files_random":
             req_path = params.get('path', [''])[0]
             full_path = os.path.normpath(os.path.join(MEDIA_DIR, req_path))
 
@@ -187,11 +187,26 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
                             "name": entry.name, "is_dir": False,
                             "rel_path": os.path.relpath(entry.path, MEDIA_DIR), "thumb": None, "ext": ext
                         })
+            if path == "/api/files_random":
+                # Random order
+                # Shuffle everything
+                random.shuffle(items)
 
-            self.send_json({
-                "items": sorted(items, key=lambda x: (not x['is_dir'], x['name'])),
-                "current_thumb": current_folder_thumb
-            })
+                # Sort with directory first
+                items.sort(key=lambda x: not x['is_dir'])
+
+                self.send_json({
+                    "items": items,
+                    "current_thumb": current_folder_thumb
+                })
+            else:
+                # Alphabetical order
+                self.send_json({
+                    "items": sorted(items, key=lambda x: (not x['is_dir'], x['name'])),
+                    "current_thumb": current_folder_thumb
+                })
+
+
 
         # API: Thumbnail
         elif path == "/api/thumb":
