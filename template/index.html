@@ -120,19 +120,7 @@
                 <!-- Buttons -->
                 <div class="flex space-x-3">
                     <!-- Media browser (modal) -->
-                    <button onclick="toggleModal('random')"
-                        class="px-4 py-2 bg-emerald-600 rounded-lg text-sm font-bold">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" fill="currentColor"
-                            class="bi bi-shuffle" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd"
-                                d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.26-.43.636-.98 1.126-1.532C9.173 4.24 10.798 3 13 3v1c-1.798 0-3.173 1.01-4.126 2.082A9.6 9.6 0 0 0 7.556 8a9.6 9.6 0 0 0 1.317 1.918C9.828 10.99 11.204 12 13 12v1c-2.202 0-3.827-1.24-4.874-2.418A10.6 10.6 0 0 1 7 9.05c-.26.43-.636.98-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A9.6 9.6 0 0 0 6.444 8a9.6 9.6 0 0 0-1.317-1.918C4.172 5.01 2.796 4 1 4H.5a.5.5 0 0 1-.5-.5" />
-                            <path
-                                d="M13 5.466V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m0 9v-3.932a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192" />
-                        </svg>
-                    </button>
-
-                    <!-- Media browser (modal) -->
-                    <button onclick="toggleModal('sort')" class="px-4 py-2 bg-emerald-600 rounded-lg text-sm font-bold">
+                    <button onclick="toggleModal()" class="px-4 py-2 bg-emerald-600 rounded-lg text-sm font-bold">
                         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" fill="currentColor"
                             class="bi bi-collection-play" viewBox="0 0 16 16">
                             <path
@@ -195,7 +183,6 @@
         const video = ['.mp4', '.mkv', '.avi', '.mov', '.m4v'];
         let latest_folder = ""; // Track the path where browser was when it was open before a play or before a "X"
         let previousPath = ""; // Track the path to scroll to after going back
-        let sorting = ""; // Save latest sorting method selected by the user
 
         // Normalize path to use forward slashes (works on both Windows and Linux)
         function normalizePath(p) {
@@ -233,11 +220,10 @@
             return data;
         }
 
-        function toggleModal(selected_sorting = "") {
+        function toggleModal() {
             // Show/hide the media library modal
             const m = document.getElementById('file-modal');
             const isVisible = m.classList.contains('invisible');
-            sorting = selected_sorting;
             if (isVisible) {
                 m.classList.remove('invisible', 'opacity-0');
                 loadFiles(latest_folder);
@@ -248,13 +234,8 @@
 
         async function loadFiles(path = "") {
             // Load files from the backend for a given path and display them in the modal
-            let res;
-            if (sorting == "random") {
-                res = await fetch(`/api/files_random?path=${encodeURIComponent(path)}`); // Fetch files for the specified path
-            } else {
-                res = await fetch(`/api/files?path=${encodeURIComponent(path)}`); // Fetch files for the specified path
-            }
-
+            res = await fetch(`/api/files?path=${encodeURIComponent(path)}`); // Fetch files for the specified path
+            
             const data = await res.json();
             // response example: 
             // { current_thumb: "url_to_current_folder_thumbnail",
@@ -280,9 +261,25 @@
                 banner.style.display = 'none';
             }
 
+            // Always add the shake button at the top of the list, above back button
+            const shakeDiv = document.createElement('div');
+            shakeDiv.id = 'shake-btn';
+            shakeDiv.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center mb-4";
+            shakeDiv.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-shuffle mr-2" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.26-.43.636-.98 1.126-1.532C9.173 4.24 10.798 3 13 3v1c-1.798 0-3.173 1.01-4.126 2.082A9.6 9.6 0 0 0 7.556 8a9.6 9.6 0 0 0 1.317 1.918C9.828 10.99 11.204 12 13 12v1c-2.202 0-3.827-1.24-4.874-2.418A10.6 10.6 0 0 1 7 9.05c-.26.43-.636.98-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A9.6 9.6 0 0 0 6.444 8a9.6 9.6 0 0 0-1.317-1.918C4.172 5.01 2.796 4 1 4H.5a.5.5 0 0 1-.5-.5"/>
+                        <path d="M13 5.466V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m0 9v-3.932a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192"/>
+                    </svg>
+                    <div class="flex-grow min-w-0">
+                        <div class="truncate font-bold text-lg text-white">SHAKE</div>
+                    </div>
+                `;
+            shakeDiv.onclick = () => shuffleList();
+
             // Add the "Back" button if we are not in the root directory
             if (path !== "" && path !== ".") {
                 const backDiv = document.createElement('div');
+                backDiv.id = 'back-btn';
                 backDiv.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center mb-4";
 
                 // Set here the path to your "Back" image
@@ -304,12 +301,16 @@
                 // Add the "Back" button at the beginning of the list
                 list.prepend(backDiv); // We use 'prepend' to ensure it is always the first item in the list
             }
+            // finally, make sure the shake button is always the very first element
+            list.prepend(shakeDiv);
 
             data.items.forEach(f => {
                 const div = document.createElement('div');
 
                 div.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center";
                 div.setAttribute('data-rel-path', f.rel_path); // Add attribute to track folder path
+                // store whether this item is a directory so shuffle can separate them
+                div.setAttribute('data-is-dir', f.is_dir);
 
                 // Determine the thumbnail to display for the file/folder
                 let iconHtml;
@@ -521,6 +522,30 @@
                     break;
                 }
             }
+        }
+
+        // Shuffle items already loaded in the modal (folders first then files)
+        function shuffleList() {
+            const list = document.getElementById('file-list');
+            const children = Array.from(list.children);
+            const shake = document.getElementById('shake-btn');
+            const back = document.getElementById('back-btn');
+            const items = children.filter(c => c !== shake && c !== back);
+            const folders = items.filter(c => c.getAttribute('data-is-dir') === 'true');
+            const files = items.filter(c => c.getAttribute('data-is-dir') === 'false');
+            const shuffle = arr => {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+            };
+            shuffle(folders);
+            shuffle(files);
+            list.innerHTML = '';
+            if (shake) list.appendChild(shake);
+            if (back) list.appendChild(back);
+            folders.forEach(f => list.appendChild(f));
+            files.forEach(f => list.appendChild(f));
         }
 
     </script>
