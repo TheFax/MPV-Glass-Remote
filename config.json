@@ -10,5 +10,7 @@
     "autoplay_max": 20,
     "port": 5000,
 
-    "audio_device": "auto"
+    "audio_device": "auto",
+    "normalize_audio": "True",
+    "start_fullscreen": "False"
 }

@@ -49,7 +49,7 @@ def load_config():
         if not isinstance(config["autoplay_extensions"], list):
             config["autoplay_extensions"] = []
         # Normalize extensions to start with a dot and be lowercase
-        config["autoplay_extensions"] = [ (e.lower() if e.startswith('.') else f'.{e.lower()}') for e in config["autoplay_extensions"] ]
+        config["autoplay_extensions"] = [(e.lower() if e.startswith('.') else f'.{e.lower()}') for e in config["autoplay_extensions"]]
 
         config["autoplay_max"] = int(config.get("autoplay_max", 20))
 
@@ -75,6 +75,8 @@ MPV_EXE = CONF['mpv_executable']
 IPC_SOCKET = CONF['ipc_socket']
 SCREENSHOT_TEMP = CONF['screenshot_file']
 AUDIO_DEVICE = CONF['audio_device']
+NORMALIZE_AUDIO = CONF['normalize_audio']
+START_FULLSCREEN = CONF['start_fullscreen']
 
 
 def send_mpv_command(command):
@@ -137,11 +139,7 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         # Create standard log message
         message = format % args
-        # Print \r at beginning of the line, in order to delete the previous log text.
-        # end="" to terminate the string without a new line.
-        # flush=True to update immediately the screen
-
-        print(f"[Realtime Log] {message}".ljust(80), flush=True)
+        # print(f"[Realtime Log] {message}".ljust(80), flush=True)
 
     def do_GET(self):
         url = urllib.parse.urlparse(self.path)
@@ -152,7 +150,7 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
         if path == "/":
             print(f"try to serve homepage")
             self.serve_file('./template/index.html', 'text/html')
-            
+
         # Static files
         elif os.path.isfile("./template/" + path.lstrip('/')):
             self.serve_file("./template/" + path.lstrip('/'))
@@ -253,8 +251,8 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
                     "filename": file_name,
                     "folder": folder_rel,
                     "extension": extension,
-                    "playlist_pos":  send_mpv_command(["get_property", "playlist-pos-1"]).get("data", ""),
-                    "playlist_count":   send_mpv_command(["get_property", "playlist-count"]).get("data", "")
+                    "playlist_pos": send_mpv_command(["get_property", "playlist-pos-1"]).get("data", ""),
+                    "playlist_count": send_mpv_command(["get_property", "playlist-count"]).get("data", "")
                 }
             self.send_json(status)
 
@@ -263,7 +261,7 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
             response = send_mpv_command(["screenshot-to-file", SCREENSHOT_TEMP, "video"])
 
             if "offline" in response:
-                self.serve_file("offline.jpg", 'image/jpeg')
+                self.serve_file("./template/offline.jpg", 'image/jpeg')
             else:
                 if os.path.exists(SCREENSHOT_TEMP):
                     self.serve_file(SCREENSHOT_TEMP, 'image/jpeg')
@@ -319,13 +317,23 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
                     # On any error, fall back to single-file playback
                     playlist = [file_path]
 
-                # Launch mpv with the playlist so mpv will handle advancing to next files
-                cmd = [MPV_EXE,
-                       f'--input-ipc-server={IPC_SOCKET}',
-                       '--idle',
-                       '--fullscreen',
-                       '--volume=80',
-                       f'--audio-device={AUDIO_DEVICE}'] + playlist
+                # Create the MPV command line
+                options = [f'--input-ipc-server={IPC_SOCKET}',
+                           '--idle',
+                           '--volume=80',
+                           f'--audio-device={AUDIO_DEVICE}'
+                           ]
+
+                if NORMALIZE_AUDIO == "True":
+                    options.append('--af=dynaudnorm')
+                
+                if START_FULLSCREEN == "True":
+                    options.append('--fullscreen')
+
+                cmd = [MPV_EXE]
+                cmd.extend(options)
+                cmd.extend(playlist)
+                # cmd = [MPV_EXE, options, playlist]
 
                 subprocess.Popen(cmd)
 
