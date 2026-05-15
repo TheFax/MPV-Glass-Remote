@@ -166,8 +166,16 @@
     <!-- Modal "Media library"-->
     <div id="file-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center invisible opacity-0 z-50">
         <div class="modal-content p-6 border border-gray-700 w-[95vw] max-w-6xl h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4 flex-shrink-0">
                 <h3 class="text-xl font-bold text-emerald-400">Media Library</h3>
+                <div class="flex gap-2">
+                    <button onclick="sortAndRender('alpha')"
+                        class="px-3 py-1 bg-gray-800 rounded text-xs border border-gray-600">A-Z</button>
+                    <button onclick="sortAndRender('date')"
+                        class="px-3 py-1 bg-gray-800 rounded text-xs border border-gray-600">Recenti</button>
+                    <button onclick="sortAndRender('shuffle')"
+                        class="px-3 py-1 bg-gray-800 rounded text-xs border border-gray-600">Random</button>
+                </div>
                 <button onclick="toggleModal()" class="text-gray-400 text-3xl">&times;</button>
             </div>
             <div class="overflow-y-auto flex-grow pr-2">
@@ -232,135 +240,132 @@
             }
         }
 
-        async function loadFiles(path = "") {
-            // Load files from the backend for a given path and display them in the modal
-            res = await fetch(`/api/files?path=${encodeURIComponent(path)}`); // Fetch files for the specified path
-            
+
+        let currentFiles = []; // Salva i file caricati per poterli riordinare senza rifare fetch
+        let currentSortMode = 'alpha';
+
+        // --- GESTIONE CRONOLOGIA BROWSER ---
+        window.addEventListener('popstate', (event) => {
+            const modal = document.getElementById('file-modal');
+            if (modal.classList.contains('invisible')) return;
+
+            if (event.state && event.state.path !== undefined) {
+                loadFiles(event.state.path, false); // false = non aggiungere un altro stato alla cronologia
+            } else {
+                // Se torniamo indietro fino all'inizio, chiudiamo il modal
+                toggleModal(false);
+            }
+        });
+
+
+
+
+        async function loadFiles(path = "", pushToHistory = true) {
+            const res = await fetch(`/api/files?path=${encodeURIComponent(path)}`);
             const data = await res.json();
-            // response example: 
-            // { current_thumb: "url_to_current_folder_thumbnail",
-            //   items: [ { name: "file_or_folder_name", 
-            //              rel_path: "relative_path_from_root",
-            //              is_dir: true_or_false,
-            //              thumb: "optional_thumbnail_url",
-            //              ext: "file_extension" }, 
-            //             ... 
-            //         ] }
-            const list = document.getElementById('file-list'); // Container for file/folder items
-            const banner = document.getElementById('current-folder-banner'); // Banner image element for the current folder
 
-            list.innerHTML = "";
+            currentFiles = data.items;
+            latest_folder = path;
 
-            // Set the current folder banner if available
+            // Gestione History API
+            if (pushToHistory) {
+                history.pushState({ path: path }, "", "");
+            }
+
+            // Gestione Banner
+            const banner = document.getElementById('current-folder-banner');
             if (data.current_thumb) {
-                // If there is a thumbnail for the current folder, set it as the banner image
                 banner.src = data.current_thumb;
                 banner.style.display = 'block';
             } else {
-                // If there is no thumbnail for the current folder, hide the banner element
                 banner.style.display = 'none';
             }
 
-            // Always add the shake button at the top of the list, above back button
-            const shakeDiv = document.createElement('div');
-            shakeDiv.id = 'shake-btn';
-            shakeDiv.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center mb-4";
-            shakeDiv.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-shuffle mr-2" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.26-.43.636-.98 1.126-1.532C9.173 4.24 10.798 3 13 3v1c-1.798 0-3.173 1.01-4.126 2.082A9.6 9.6 0 0 0 7.556 8a9.6 9.6 0 0 0 1.317 1.918C9.828 10.99 11.204 12 13 12v1c-2.202 0-3.827-1.24-4.874-2.418A10.6 10.6 0 0 1 7 9.05c-.26.43-.636.98-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A9.6 9.6 0 0 0 6.444 8a9.6 9.6 0 0 0-1.317-1.918C4.172 5.01 2.796 4 1 4H.5a.5.5 0 0 1-.5-.5"/>
-                        <path d="M13 5.466V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m0 9v-3.932a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192"/>
-                    </svg>
-                    <div class="flex-grow min-w-0">
-                        <div class="truncate font-bold text-lg text-white">SHAKE</div>
-                    </div>
-                `;
-            shakeDiv.onclick = () => shuffleList();
+            sortAndRender(currentSortMode);
+        }
 
-            // Add the "Back" button if we are not in the root directory
-            if (path !== "" && path !== ".") {
-                const backDiv = document.createElement('div');
-                backDiv.id = 'back-btn';
-                backDiv.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center mb-4";
+        function sortAndRender(mode) {
+            currentSortMode = mode;
+            let sortedItems = [...currentFiles];
 
-                // Set here the path to your "Back" image
-                const backThumbPath = "/back.png";
-
-                backDiv.innerHTML = `
-                    <img src="${backThumbPath}" class="folder-thumb">
-                    <div class="flex-grow min-w-0">
-                        <div class="truncate font-bold text-lg text-white">BACK</div>
-                        <div class="text-xs text-gray-400 font-semibold tracking-wide uppercase">Previous Directory</div>
-                    </div>
-                    `;
-
-                // Attach an onclick event to the "Back" button that loads the parent directory
-                backDiv.onclick = async () => {
-                    await goBackDirectory(path);
-                };
-
-                // Add the "Back" button at the beginning of the list
-                list.prepend(backDiv); // We use 'prepend' to ensure it is always the first item in the list
+            if (mode === 'alpha') {
+                sortedItems.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+            } else if (mode === 'date') {
+                sortedItems.sort((a, b) => b.mtime - a.mtime);
+            } else if (mode === 'shuffle') {
+                for (let i = sortedItems.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [sortedItems[i], sortedItems[j]] = [sortedItems[j], sortedItems[i]];
+                }
             }
-            // finally, make sure the shake button is always the very first element
-            list.prepend(shakeDiv);
 
-            data.items.forEach(f => {
+            // Dividi cartelle e file (le cartelle restano sempre sopra nel rispettivo ordine)
+            const folders = sortedItems.filter(i => i.is_dir);
+            const files = sortedItems.filter(i => !i.is_dir);
+
+            renderList(folders.concat(files));
+        }
+
+        function renderList(items) {
+            const list = document.getElementById('file-list');
+            list.innerHTML = "";
+
+            // Pulsante BACK (Sempre primo)
+            if (latest_folder !== "" && latest_folder !== ".") {
+                const backDiv = document.createElement('div');
+                backDiv.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center mb-4";
+                backDiv.innerHTML = `
+            <img src="/back.png" class="folder-thumb">
+            <div class="flex-grow min-w-0">
+                <div class="truncate font-bold text-lg text-white">BACK</div>
+                <div class="text-xs text-gray-400">Torna alla cartella superiore</div>
+            </div>`;
+                backDiv.onclick = () => history.back(); // Usa la cronologia del browser
+                list.appendChild(backDiv);
+            }
+
+            items.forEach(f => {
                 const div = document.createElement('div');
-
                 div.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center";
-                div.setAttribute('data-rel-path', f.rel_path); // Add attribute to track folder path
-                // store whether this item is a directory so shuffle can separate them
-                div.setAttribute('data-is-dir', f.is_dir);
 
-                // Determine the thumbnail to display for the file/folder
-                let iconHtml;
-                if (f.thumb) {
-                    // If there is a thumb...
-                    iconHtml = `<img loading="lazy" src="${f.thumb}" class="folder-thumb">`;
-                } else {
-                    // If there is not a thumb...
-                    iconHtml = '';
-                }
+                // Formattazione data
+                const dateStr = new Date(f.mtime * 1000).toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-                // Determine the type of the file/folder and set the appropriate text
-                let typeText;
-                if (f.is_dir) {
-                    typeText = "Folder";
-                } else if (audioHighRes.includes(f.ext)) {
-                    typeText = "Lossless Audio";
-                } else if (audioLowRes.includes(f.ext)) {
-                    typeText = "Audio";
-                } else if (video.includes(f.ext)) {
-                    typeText = "Video";
-                } else {
-                    typeText = "Unknown";
-                }
+                let typeText = f.is_dir ? "Folder" : (video.includes(f.ext) ? "Video" : "Audio");
 
-                // Set the inner HTML of the div to include the thumbnail/icon, file/folder name, and type
                 div.innerHTML = `
-                    ${iconHtml}
-                        <div class="flex-grow min-w-0">
-                            <div class="truncate font-bold text-lg">${f.name}</div>
-                            <div class="text-xs text-emerald-400/80 uppercase tracking-wider">${typeText}</div>
-                        </div>
-                    `;
+            ${f.thumb ? `<img loading="lazy" src="${f.thumb}" class="folder-thumb">` : ''}
+            <div class="flex-grow min-w-0">
+                <div class="truncate font-bold text-lg">${f.name}</div>
+                <div class="flex justify-between text-[10px] text-emerald-400/80 uppercase tracking-wider">
+                    <span>${typeText}</span>
+                    <span class="text-gray-500">${dateStr}</span>
+                </div>
+            </div>`;
 
-                // Attach an onclick event to the div that either loads the folder's contents or plays the file
                 div.onclick = async () => {
                     if (f.is_dir) {
-                        latest_folder = f.rel_path;
-                        // If it's a directory, load its contents
                         await loadFiles(f.rel_path);
-                        const sc = document.querySelector('#file-modal .overflow-y-auto');
-                        if (sc) sc.scrollTop = 0;
+                        document.querySelector('#file-modal .overflow-y-auto').scrollTop = 0;
                     } else {
-                        // If it's a file, send the play command to the backend with the file's relative path
                         sendCommand('play_file', [f.rel_path]);
                     }
                 };
-
                 list.appendChild(div);
             });
+        }
+
+        // Modifica toggleModal per gestire la chiusura e la cronologia
+        function toggleModal(updateHistory = true) {
+            const m = document.getElementById('file-modal');
+            const isVisible = !m.classList.contains('invisible');
+
+            if (!isVisible) {
+                m.classList.remove('invisible', 'opacity-0');
+                loadFiles(latest_folder, updateHistory);
+            } else {
+                m.classList.add('invisible', 'opacity-0');
+            }
         }
 
         function setVolume(val) {

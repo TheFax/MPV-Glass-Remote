@@ -155,9 +155,8 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
         elif os.path.isfile("./template/" + path.lstrip('/')):
             self.serve_file("./template/" + path.lstrip('/'))
 
-
         # API: List Files
-        elif path == "/api/files" or path == "/api/files_random":
+        elif path == "/api/files":
             req_path = params.get('path', [''])[0]
             full_path = os.path.normpath(os.path.join(MEDIA_DIR, req_path))
 
@@ -171,6 +170,10 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
                 current_folder_thumb = f"/api/thumb?path={urllib.parse.quote(os.path.join(req_path, 'folder.jpg'))}"
 
             for entry in os.scandir(full_path):
+                # Otteniamo i dati della entry (incluso mtime)
+                stats = entry.stat()
+                mtime = stats.st_mtime
+
                 if entry.is_dir():
                     thumb = None
                     if os.path.exists(os.path.join(entry.path, "folder.jpg")):
@@ -178,35 +181,23 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
                         thumb = f"/api/thumb?path={urllib.parse.quote(os.path.join(rel, 'folder.jpg'))}"
                     items.append({
                         "name": entry.name, "is_dir": True,
-                        "rel_path": os.path.relpath(entry.path, MEDIA_DIR), "thumb": thumb
+                        "rel_path": os.path.relpath(entry.path, MEDIA_DIR),
+                        "thumb": thumb, "mtime": mtime
                     })
                 else:
                     ext = os.path.splitext(entry.name)[1].lower()
                     if ext in ALLOWED_EXTENSIONS:
                         items.append({
                             "name": entry.name, "is_dir": False,
-                            "rel_path": os.path.relpath(entry.path, MEDIA_DIR), "thumb": None, "ext": ext
+                            "rel_path": os.path.relpath(entry.path, MEDIA_DIR),
+                            "thumb": None, "ext": ext, "mtime": mtime
                         })
-            if path == "/api/files_random":
-                # Random order
-                # Shuffle everything
-                random.shuffle(items)
 
-                # Sort with directory first
-                items.sort(key=lambda x: not x['is_dir'])
-
-                self.send_json({
-                    "items": items,
-                    "current_thumb": current_folder_thumb
-                })
-            else:
-                # Alphabetical order
-                self.send_json({
-                    "items": sorted(items, key=lambda x: (not x['is_dir'], x['name'])),
-                    "current_thumb": current_folder_thumb
-                })
-
-
+            # Restituiamo la lista grezza (l'ordinamento lo farà il client)
+            self.send_json({
+                "items": items,
+                "current_thumb": current_folder_thumb
+            })
 
         # API: Thumbnail
         elif path == "/api/thumb":
@@ -341,7 +332,7 @@ class MPVRemoteHandler(BaseHTTPRequestHandler):
 
                 if NORMALIZE_AUDIO == "True":
                     options.append('--af=dynaudnorm')
-                
+
                 if START_FULLSCREEN == "True":
                     options.append('--fullscreen')
 
