@@ -269,7 +269,12 @@
 
             // Gestione History API
             if (pushToHistory) {
-                history.pushState({ path: path }, "", "");
+                // Evito però di inserire l'elemento se è uguale a quello corrente
+                // (Questo può accadere in diversi casi, per esempio quando si apre e
+                // si chiude il modal ripetutamente)
+                if (!history.state || history.state.path !== path) {
+                    history.pushState({ path: path }, "", "");
+                }
             }
 
             // Gestione Banner
