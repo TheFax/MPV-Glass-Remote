@@ -24,9 +24,9 @@
     <!-- Main window -->
     <div class="max-w-xl w-full space-y-6 mt-10">
         <!-- Top part of the screen, with preview and media title -->
-        <div class="vol_card p-4 text-center">
+        <div class="preview-card p-4 text-center">
             <!-- Preview image -->
-            <img id="preview" src="" alt="Loading..." class="preview-box mb-6">
+            <img id="preview" src="" class="preview-box mb-2">
             <!-- Media title -->
             <h2 id="file-title" class="text-xl font-semibold truncate px-4 text-emerald-400">Waiting server...</h2>
         </div>
@@ -320,11 +320,11 @@
                 const backDiv = document.createElement('div');
                 backDiv.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center mb-4";
                 backDiv.innerHTML = `
-            <img src="/back.png" class="folder-thumb">
-            <div class="flex-grow min-w-0">
-                <div class="truncate font-bold text-lg text-white">BACK</div>
-                <div class="text-xs text-gray-400">Torna alla cartella superiore</div>
-            </div>`;
+                                    <img src="/back.png" class="folder-thumb">
+                                     <div class="flex-grow min-w-0">
+                                      <div class="truncate font-bold text-lg text-white">BACK</div>
+                                      <div class="text-xs text-gray-400">Torna alla cartella superiore</div>
+                                    </div>`;
                 backDiv.onclick = () => history.back(); // Usa la cronologia del browser
                 list.appendChild(backDiv);
             }
@@ -334,19 +334,20 @@
                 div.className = "p-4 folder-card rounded-xl cursor-pointer flex items-center";
 
                 // Formattazione data
-                const dateStr = new Date(f.mtime * 1000).toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
-
+                //const dateStr = new Date(f.mtime * 1000).toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+                const dateStr = "";
+                
                 let typeText = f.is_dir ? "Folder" : (video.includes(f.ext) ? "Video" : "Audio");
 
                 div.innerHTML = `
-            ${f.thumb ? `<img loading="lazy" src="${f.thumb}" class="folder-thumb">` : ''}
-            <div class="flex-grow min-w-0">
-                <div class="truncate font-bold text-lg">${f.name}</div>
-                <div class="flex justify-between text-[10px] text-emerald-400/80 uppercase tracking-wider">
-                    <span>${typeText}</span>
-                    <span class="text-gray-500">${dateStr}</span>
-                </div>
-            </div>`;
+                                ${f.thumb ? `<img loading="lazy" src="${f.thumb}" class="folder-thumb">` : ''}
+                                <div class="flex-grow min-w-0">
+                                    <div class="truncate font-bold text-lg">${f.name}</div>
+                                    <div class="flex justify-between text-[10px] text-emerald-400/80 uppercase tracking-wider">
+                                        <span>${typeText}</span>
+                                        <span class="text-gray-500">${dateStr}</span>
+                                    </div>
+                                </div>`;
 
                 div.onclick = async () => {
                     if (f.is_dir) {
@@ -385,7 +386,7 @@
             document.getElementById('preview').src = `/api/screenshot?t=${new Date().getTime()}`;
         }
 
-        // Update UI every 1 second
+        // Update UI every x second
         async function updateStatus() {
             try {
                 const res = await fetch('/api/status');
